@@ -1,0 +1,9 @@
+*.out
+*.exe
+_minted-main
+*.log
+*.aux
+*.wav
+music
+.vscode
+*.txt
