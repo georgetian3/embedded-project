@@ -3,7 +3,7 @@
 
 \subsection{实现}
 
-\subsection{编译}
+\subsection{编译与运行}
 
 为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{g++-arm-linux-gnueabihf} 包：
 
@@ -12,31 +12,49 @@ sudo apt install g++-arm-linux-gnueabihf
 arm-linux-gnueabihf-g++ wave.cpp -static -o music
 \end{codeblock}
 
-\subsection{运行}
-
 主机与开发板通过以太网线沟通。
+
+\newpage
 
 \subsection{结果}
 
 
-\begin{codeblock}
+
+\begin{minted}[style=bw]{console}
+root@myir:~# ./music-arm 
+filename: 1 argument(s) expected. 0 provided.
+Usage: music [--help] [--version] filename
+
+Positional arguments:
+  filename      Filename of the wave file
+
+Optional arguments:
+  -h, --help    shows help message and exits
+  -v, --version prints version information and exits
+root@myir:~# ./music-arm music-arm 
+"music-arm" is not a valid wave file
+root@myir:~# ./music-arm test.wav 
+================================
+test.wav
+--------------------------------
 RIFFChunk
     ID            RIFF
-    Size          1073210
+    Size          589860
     Format        WAVE
 FormatChunk
-    ID            fmt 
+    ID            fmt
     Size          16
     AudioFormat   1
     NumChannels   2
-    SampleRate    8000
-    ByteRate      32000
+    SampleRate    44100
+    ByteRate      176400
     BlockAlign    4
     BitsPerSample 16
 DataChunk
     ID            data
-    Size          1072948
-\end{codeblock}
+    Size          589824
+================================
+\end{minted}
 
 
 \subsection{问题及其解决方法}
@@ -46,7 +64,9 @@ DataChunk
     
     手动在开发板以及主机上配置 IP。
 
-    \item 在开发板上运行时出现错误：\code{.....glibc2.3}
+    \item 在开发板上运行时出现错误：
+    
+    \code{./music-arm: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./music-arm)}
     
     由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 g++ 的 \code{-static} 编译参数进行静态链接。
 \end{itemize}

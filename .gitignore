@@ -7,3 +7,5 @@ _minted-main
 music-*
 .vscode
 *.txt
+*.pyg
+hello-wayland
