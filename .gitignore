@@ -4,6 +4,6 @@ _minted-main
 *.log
 *.aux
 *.wav
-music
+music-*
 .vscode
 *.txt
