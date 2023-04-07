@@ -1,3 +1,4 @@
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -64,6 +65,10 @@ public:
 
     }
 
+    // Reads a file, if it is a well-formed wave file parse its header
+    // Returns: `true` if the file is a well-formed wave file,
+    //          `false otherwise
+    // If `false` was returned, all other functions have undefined behavior
     bool read(const std::filesystem::path& filename) {
         delete_data();
         header = {};
@@ -88,14 +93,16 @@ public:
             header.data_chunk.ID   == DATA_CHUNK_ID;
     }
 
-    WaveHeader header() {
+    // Returns the wave file header
+    WaveHeader get_header() {
         return header;
     }
-
-    void data(uint8_t* buf) {
+    // Copies the audio data into `buf`
+    // User must ensure `buf` is sufficiently long
+    void get_data(uint8_t* buf) {
         memcpy(buf, data, header.data_chunk.Size);
     }
-
+    // Returns: formatted wave file header 
     std::string header_string() {
         std::ostringstream str;
         str <<
@@ -117,11 +124,14 @@ public:
                 "\n    Size          " << header.data_chunk.Size << '\n';
         return str.str();
     }
-
+    // Print the formatted wave file header
     void print_header() {
         std::cout << header_string();
     }
-
+    // Save the formatted wave file header in file `header_path`
+    // If no path is provided, it is saved at the same path as the
+    // input wave file, but replacing the suffix with "txt"
+    // E.g.: /foo/bar/audio.wav -> /foo/bar/audio.txt
     void save_header(std::filesystem::path header_path = std::filesystem::path()) {
         if (header_path.empty()) {
             header_path = wave_path.replace_extension("txt");

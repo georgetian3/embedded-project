@@ -1,0 +1,52 @@
+\section{Part 1}
+
+
+\subsection{实现}
+
+\subsection{编译}
+
+为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{g++-arm-linux-gnueabihf} 包：
+
+\begin{codeblock}
+sudo apt install g++-arm-linux-gnueabihf
+arm-linux-gnueabihf-g++ wave.cpp -static -o music
+\end{codeblock}
+
+\subsection{运行}
+
+主机与开发板通过以太网线沟通。
+
+\subsection{结果}
+
+
+\begin{codeblock}
+RIFFChunk
+    ID            RIFF
+    Size          1073210
+    Format        WAVE
+FormatChunk
+    ID            fmt 
+    Size          16
+    AudioFormat   1
+    NumChannels   2
+    SampleRate    8000
+    ByteRate      32000
+    BlockAlign    4
+    BitsPerSample 16
+DataChunk
+    ID            data
+    Size          1072948
+\end{codeblock}
+
+
+\subsection{问题及其解决方法}
+
+\begin{itemize}
+    \item 开发板的 DHCP 没有自动配置 IP 地址。
+    
+    手动在开发板以及主机上配置 IP。
+
+    \item 在开发板上运行时出现错误：\code{.....glibc2.3}
+    
+    由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 g++ 的 \code{-static} 编译参数进行静态链接。
+\end{itemize}

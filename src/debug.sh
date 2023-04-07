@@ -1,1 +1,0 @@
-g++ wav.cpp && ./a.out example.wav
