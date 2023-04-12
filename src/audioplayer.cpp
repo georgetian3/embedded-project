@@ -1,4 +1,4 @@
-#include "wavereader.hpp"
+#include "audioplayer.hpp"
 
 #include <cstring>
 #include <filesystem>
@@ -7,14 +7,14 @@
 #include <string>
 
 
-std::string WaveReader::int_to_string(const uint32_t i) const {
+std::string AudioPlayer::int_to_string(const uint32_t i) const {
     std::string str(4, 0);
     auto ptr = (uint32_t*)str.data();
     *ptr = i;
     return str;
 }
 
-void WaveReader::delete_data() {
+void AudioPlayer::delete_data() {
     if (data != nullptr) {
         delete[] data;
         data = nullptr;
@@ -22,20 +22,15 @@ void WaveReader::delete_data() {
 }
 
 
-
-WaveReader::WaveReader() {
-
-}
-
-WaveReader::~WaveReader() {
+AudioPlayer::~AudioPlayer() {
     delete_data();
 }
 
-bool WaveReader::read(const std::filesystem::path& filename) {
+bool AudioPlayer::read(const std::filesystem::path& filename) {
     delete_data();
     header = {};
-    wave_path = filename;
-    std::ifstream wav_file(wave_path);
+    audio_path = filename;
+    std::ifstream wav_file(audio_path);
     wav_file.read((char*)&header, sizeof(WaveHeader));
 
     if (wav_file.eof()) {
@@ -55,14 +50,13 @@ bool WaveReader::read(const std::filesystem::path& filename) {
         header.data_chunk.ID   == DATA_CHUNK_ID;
 }
 
-WaveHeader WaveReader::get_header() {
+WaveHeader AudioPlayer::get_header() {
     return header;
 }
-void WaveReader::get_data(uint8_t* buf) {
+void AudioPlayer::get_data(uint8_t* buf) {
     memcpy(buf, data, header.data_chunk.Size);
 }
-
-std::string WaveReader::header_string() const {
+std::string AudioPlayer::header_string() const {
     std::ostringstream str;
     str <<
         "RIFFChunk" <<
@@ -83,17 +77,14 @@ std::string WaveReader::header_string() const {
             "\n    Size          " << header.data_chunk.Size << '\n';
     return str.str();
 }
-
-void WaveReader::print_header() const {
+void AudioPlayer::print_header() const {
     std::cout << header_string();
 }
-
-void WaveReader::save_header(std::filesystem::path header_path) const {
+void AudioPlayer::save_header(std::filesystem::path header_path) const {
     if (header_path.empty()) {
-        header_path = wave_path;
+        header_path = audio_path;
         header_path.replace_extension("txt");
     }
     std::ofstream fout(header_path);
     fout << header_string();
 }
-

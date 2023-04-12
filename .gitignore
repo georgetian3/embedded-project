@@ -4,7 +4,7 @@ _minted-main
 *.log
 *.aux
 *.wav
-music-*
+audioplayer-*
 .vscode
 *.txt
 *.pyg

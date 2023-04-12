@@ -3,9 +3,9 @@
 
 #include <cstdint>
 
-#define RIFF_CHUNK_ID   0x46464952 // RIFF
-#define FORMAT_CHUNK_ID 0x20746D66 // fmt 
-#define DATA_CHUNK_ID   0x61746164 // data
+#define RIFF_CHUNK_ID   0x46464952 // "RIFF"
+#define FORMAT_CHUNK_ID 0x20746D66 // "fmt "
+#define DATA_CHUNK_ID   0x61746164 // "data"
 
 struct RIFFChunk {
     uint32_t ID;

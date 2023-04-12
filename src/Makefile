@@ -1,12 +1,12 @@
 sxx_args = -o HostKeyAlgorithms=+ssh-rsa
 sxx_target = root@192.168.2.2
 
-debug_exe = music-debug
-xc_exe = music-arm
+debug_exe = audioplayer-debug
+xc_exe = audioplayer-arm
 
-cpps = main.cpp wavereader.cpp
+cpps = main.cpp audioplayer.cpp
 
-compile_flags = -lasound
+compile_flags = -lasound -Wall
 xc_flags = -static
 
 debug: $(cpps)

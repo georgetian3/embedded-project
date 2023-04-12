@@ -1,6 +1,5 @@
 #include "argparse.hpp"
-#include "wavereader.hpp"
-#include "waveplayer.hpp"
+#include "audioplayer.hpp"
 
 #include <iostream>
 
@@ -12,8 +11,7 @@ int main(int argc, char** argv) {
 
     try {
         program.parse_args(argc, argv);
-    }
-    catch (const std::runtime_error& err) {
+    } catch (const std::runtime_error& err) {
         std::cerr << err.what() << std::endl;
         std::cerr << program;
         return 1;
@@ -21,14 +19,15 @@ int main(int argc, char** argv) {
 
     auto filename = program.get("filename");
 
-    int dl = 32;
 
 
-    WavePlayer p;
-
+    AudioPlayer p;
     return 0;
-    
-    WaveReader reader;
+
+
+
+    int dl = 32;
+    AudioPlayer reader;
     if (reader.read(filename)) {
         std::cout << std::string(dl, '=') << '\n' << filename
             << '\n' << std::string(dl, '-') << '\n';
