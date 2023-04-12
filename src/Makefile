@@ -6,15 +6,18 @@ xc_exe = music-arm
 
 cpps = main.cpp wavereader.cpp
 
+compile_flags = -lasound
+xc_flags = -static
+
 debug: $(cpps)
-	g++ -g $(cpps) -o $(debug_exe)
+	g++ -g $(cpps) $(compile_flags) -o $(debug_exe)
 	./$(debug_exe) example.wav
 
 ssh:
 	ssh $(sxx_args) $(sxx_target)
 
 xc: $(cpps)
-	arm-linux-gnueabihf-g++ $(cpps) -static -o $(xc_exe)
+	aarch64-linux-gnu-g++ $(cpps) $(compile_flags) $(xc_flags) -o $(xc_exe)
 	scp $(sxx_args) $(xc_exe) $(sxx_target):~
 	ssh -t $(sxx_args) $(sxx_target) "./$(xc_exe) test.wav; bash -l"
 

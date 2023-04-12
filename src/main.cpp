@@ -1,5 +1,6 @@
 #include "argparse.hpp"
 #include "wavereader.hpp"
+#include "waveplayer.hpp"
 
 #include <iostream>
 
@@ -21,6 +22,11 @@ int main(int argc, char** argv) {
     auto filename = program.get("filename");
 
     int dl = 32;
+
+
+    WavePlayer p;
+
+    return 0;
     
     WaveReader reader;
     if (reader.read(filename)) {
