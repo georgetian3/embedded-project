@@ -46,34 +46,9 @@ public:
 
     void save_header(std::filesystem::path header_path = std::filesystem::path()) const;
 
-    int SAMPLE_RATE = 48000;
-
     AudioPlayer() {
 
-        snd_pcm_t* pcm;
-        snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
-        snd_pcm_hw_params_t *hw_params;
-        snd_pcm_hw_params_alloca(&hw_params);
 
-        snd_pcm_hw_params_any(pcm, hw_params);
-        snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-        snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE);
-        snd_pcm_hw_params_set_channels(pcm, hw_params, 1);
-        snd_pcm_hw_params_set_rate(pcm, hw_params, 48000, 0);
-        snd_pcm_hw_params_set_periods(pcm, hw_params, 10, 0);
-        snd_pcm_hw_params_set_period_time(pcm, hw_params, 100000, 0); // 0.1 seconds
-
-        snd_pcm_hw_params(pcm, hw_params);
-
-        short buffer[48000];
-        std::cout << "here\n";
-
-        snd_pcm_writei(pcm, buffer, 48000);
-        std::cout << "here\n";
-        snd_pcm_drain(pcm);
-        std::cout << "here\n";
-        snd_pcm_close(pcm);
-        std::cout << "here\n";
 
 
     }
@@ -84,6 +59,52 @@ public:
         }
         assert(timestamp >= 0);
 
+        snd_pcm_t* pcm;
+
+        int error;
+
+        if (error = snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) {
+            std::cerr << "error: snd_pcm_open - " << snd_strerror(error);
+        }
+
+        snd_pcm_hw_params_t *hw_params;
+        snd_pcm_hw_params_alloca(&hw_params);
+        if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
+            std::cerr << "error: snd_pcm_hw_params_any - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) {
+            std::cerr << "error: snd_pcm_hw_params_set_access - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
+            std::cerr << "error: snd_pcm_hw_params_set_format - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, header.format_chunk.NumChannels)) {
+            std::cerr << "error: snd_pcm_hw_params_set_channels - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, header.format_chunk.SampleRate, 0)) {
+            std::cerr << "error: snd_pcm_hw_params_set_rate - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
+            std::cerr << "error: snd_pcm_hw_params_set_periods - " << snd_strerror(error);
+        }
+        // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.Size / 20, 0)) {
+        //     std::cerr << "error: snd_pcm_hw_params_set_period_time - " << snd_strerror(error);
+        // }
+        if (error = snd_pcm_hw_params(pcm, hw_params)) {
+            std::cerr << "error: snd_pcm_hw_params - " << snd_strerror(error);
+        }
+        if ((error = snd_pcm_writei(pcm, data, header.data_chunk.Size / 2)) < 0) {
+            std::cerr << "error: snd_pcm_writei - " << snd_strerror(error);
+        } else {
+            std::cout << "Frames written: " << error;
+        }
+        if (error = snd_pcm_drain(pcm)) {
+            std::cerr << "error: snd_pcm_drain - " << snd_strerror(error);
+        }
+        if (error = snd_pcm_close(pcm)) {
+            std::cerr << "error: snd_pcm_close - " << snd_strerror(error);
+        }
+        return true;
     }
 
     void pause() {

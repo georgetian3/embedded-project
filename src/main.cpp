@@ -21,21 +21,23 @@ int main(int argc, char** argv) {
 
 
 
-    AudioPlayer p;
-    return 0;
 
+
+
+    AudioPlayer player;
+    if (!player.read(filename)) {
+        std::cout << "\"" << filename << "\" is not a valid wave file\n";
+        return 1;
+    }
 
 
     int dl = 32;
-    AudioPlayer reader;
-    if (reader.read(filename)) {
-        std::cout << std::string(dl, '=') << '\n' << filename
-            << '\n' << std::string(dl, '-') << '\n';
-        reader.print_header();
-        reader.save_header();
-        std::cout << std::string(dl, '=') << '\n';
-    } else {
-        std::cout << "\"" << filename << "\" is not a valid wave file\n";
-    } 
+    std::cout << std::string(dl, '=') << '\n' << filename
+        << '\n' << std::string(dl, '-') << '\n';
+    player.print_header();
+    player.save_header();
+    std::cout << std::string(dl, '=') << '\n';
+
+    player.play();
 
 }

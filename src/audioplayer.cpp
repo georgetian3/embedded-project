@@ -45,9 +45,10 @@ bool AudioPlayer::read(const std::filesystem::path& filename) {
     }
 
     return
-        header.riff_chunk.ID   == RIFF_CHUNK_ID   &&
-        header.format_chunk.ID == FORMAT_CHUNK_ID &&
-        header.data_chunk.ID   == DATA_CHUNK_ID;
+        header.riff_chunk.ID     == RIFF_CHUNK_ID   &&
+        header.riff_chunk.Format == RIFF_WAVE_FORMAT &&
+        header.format_chunk.ID   == FORMAT_CHUNK_ID &&
+        header.data_chunk.ID     == DATA_CHUNK_ID;
 }
 
 WaveHeader AudioPlayer::get_header() {

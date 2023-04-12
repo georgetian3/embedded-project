@@ -6,7 +6,7 @@ xc_exe = audioplayer-arm
 
 cpps = main.cpp audioplayer.cpp
 
-compile_flags = -lasound -Wall
+compile_flags = -lasound -Wall -Wno-parentheses
 xc_flags = -static
 
 debug: $(cpps)
