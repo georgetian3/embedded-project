@@ -9,3 +9,6 @@ audioplayer-*
 *.txt
 *.pyg
 hello-wayland
+alsa-*
+*.key
+*.a

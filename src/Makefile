@@ -1,25 +1,51 @@
-sxx_args = -o HostKeyAlgorithms=+ssh-rsa
-sxx_target = root@192.168.2.2
+sxx_key = ~/myir.key
+sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
+sxx_port = 2222
+sxx_host = root@georgetian.com
 
 debug_exe = audioplayer-debug
-xc_exe = audioplayer-arm
+xc_exe = audioplayer-xc
 
-cpps = main.cpp audioplayer.cpp
+src_files = main.cpp audioplayer.cpp
 
-compile_flags = -lasound -Wall -Wno-parentheses
-xc_flags = -static
+compile_flags = -Wno-parentheses
+xc_flags = libasound.a -static
 
-debug: $(cpps)
-	g++ -g $(cpps) $(compile_flags) -o $(debug_exe)
-	./$(debug_exe) example.wav
+cc = g++
+xc = arm-linux-gnueabihf-g++
+
+alsa_lib_version = 1.2.8
+
+debug_wav = example.wav
+xc_wav = test.wav
+
+debug: $(src_files)
+	$(cc) -g $(src_files) $(compile_flags) -o $(debug_exe)
+
+drun:
+	make debug
+	./$(debug_exe) $(debug_wav)
+
+alsa:
+	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(alsa_lib_version).tar.bz2
+	tar xf alsa-lib-$(alsa_lib_version).tar.bz2
+	cd alsa-lib-$(alsa_lib_version)
+	CC=arm-linux-gnueabihf-gcc alsa-lib-$(alsa_lib_version)/configure --enable-shared=yes --enable-static=no --host=armv7l-unknown-linux-gnueabihf
+	make alsa-lib-$(alsa_lib_version)
+
+xc: $(src_files)
+	$(xc) $(src_files) $(xc_flags) $(compile_flags) -o $(xc_exe)
 
 ssh:
-	ssh $(sxx_args) $(sxx_target)
+	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)
 
-xc: $(cpps)
-	aarch64-linux-gnu-g++ $(cpps) $(compile_flags) $(xc_flags) -o $(xc_exe)
-	scp $(sxx_args) $(xc_exe) $(sxx_target):~
-	ssh -t $(sxx_args) $(sxx_target) "./$(xc_exe) test.wav; bash -l"
+scp: $(xc_exe)
+	scp $(sxx_args) -P $(sxx_port) $(xc_exe) $(sxx_host):~
+
+xrun:
+	ssh -t $(sxx_args) -p $(sxx_port) $(sxx_host) "./$(xc_exe) $(xc_wav); bash -l"
 
 clean:
-	rm music-*
+	rm -f audioplayer-*
+	rm -rf alsa-lib-*
+	rm -f *.out

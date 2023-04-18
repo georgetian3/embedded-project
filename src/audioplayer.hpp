@@ -10,6 +10,10 @@
 
 #include "waveheader.hpp"
 
+#define part1
+#define part2
+//#define part3
+
 class AudioPlayer {
 
 private:
@@ -52,6 +56,8 @@ public:
 
 
     }
+
+#ifdef part2
 
     bool play(double timestamp = 0.0, double speed = 1.0, bool blocking = true) {
         if (!blocking) {
@@ -111,6 +117,6 @@ public:
 
     }
 
-
+#endif
 
 };

@@ -20,10 +20,6 @@ int main(int argc, char** argv) {
     auto filename = program.get("filename");
 
 
-
-
-
-
     AudioPlayer player;
     if (!player.read(filename)) {
         std::cout << "\"" << filename << "\" is not a valid wave file\n";
@@ -38,6 +34,8 @@ int main(int argc, char** argv) {
     player.save_header();
     std::cout << std::string(dl, '=') << '\n';
 
+#ifdef part2
     player.play();
+#endif
 
 }
