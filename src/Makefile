@@ -11,7 +11,7 @@ xc_exe = audioplayer-xc
 src_files = main.cpp audioplayer.cpp
 
 compile_flags = -Wno-parentheses
-xc_flags = libasound.a -static
+xc_flags = 
 
 
 alsa_lib_version = 1.2.8
@@ -34,6 +34,7 @@ alsa:
 
 xc: $(src_files)
 	arm-linux-gnueabihf-g++ $(src_files) $(xc_flags) $(compile_flags) -o $(xc_exe)
+	
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)

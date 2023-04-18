@@ -11,7 +11,7 @@
 #include "waveheader.hpp"
 
 #define part1
-#define part2
+//#define part2
 //#define part3
 
 class AudioPlayer {
