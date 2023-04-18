@@ -33,7 +33,7 @@ alsa:
 	make
 
 xc: $(src_files)
-	arm-linux-gnueabihf-g++ $(src_files) $(xc_flags) $(compile_flags) -o $(xc_exe)
+	arm-linux-gnueabihf-g++ $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
 	
 
 ssh:
