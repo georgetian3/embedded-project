@@ -64,16 +64,19 @@ public:
             play(timestamp, speed, true);
         }
         assert(timestamp >= 0);
-
+        std::cout << "declare pcm\n";
         snd_pcm_t* pcm;
 
         int error;
+        std::cout << "snd_pcm_open pcm\n";
 
         if (error = snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) {
             std::cerr << "error: snd_pcm_open - " << snd_strerror(error);
         }
 
         snd_pcm_hw_params_t *hw_params;
+        std::cout << "snd_pcm_hw_params_alloca pcm\n";
+
         snd_pcm_hw_params_alloca(&hw_params);
         if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
             std::cerr << "error: snd_pcm_hw_params_any - " << snd_strerror(error);
