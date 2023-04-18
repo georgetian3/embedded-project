@@ -17,7 +17,7 @@ xc_flags =
 alsa_lib_version = 1.2.8
 
 debug_wav = example.wav
-xc_wav = test.wav
+xc_wav = test.wav -static
 
 debug: $(src_files)
 	g++ -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
