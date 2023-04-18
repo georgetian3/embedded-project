@@ -1,7 +1,3 @@
-#define part1
-#define part2
-//#define part3
-
 #ifdef part2
     #include <alsa/asoundlib.h>
 #endif
@@ -20,9 +16,12 @@ struct AudioPlayer {
     FILE* fp;
 };
 
+// Reads a file, if it is a well-formed wave file parse its header
+// Returns: `true` if the file is a well-formed wave file,
+//          `false otherwise
+// If `false` was returned, all other functions have undefined behavior
 
-
-int open(struct AudioPlayer* ap, char* filename) {
+int ap_open(struct AudioPlayer* ap, char* filename) {
     ap->filename = strdup(filename);
     ap->fp = fopen(filename, "rb");
     if (!ap->fp) {
@@ -94,7 +93,10 @@ int open(struct AudioPlayer* ap, char* filename) {
     return 0;
 }
 
-char* get_header_string(struct AudioPlayer* ap) {
+
+// Returns pointer to malloc'ed string containing the wave's header information
+// User must free pointer
+char* ap_get_header_string(struct AudioPlayer* ap) {
     struct WaveHeader h = ap->header;
     char* header_string = malloc(1024 * 1024);
     int chars_written = sprintf(
@@ -125,13 +127,17 @@ char* get_header_string(struct AudioPlayer* ap) {
     return header_string;
 }
 
-void print_header(struct AudioPlayer* ap) {
-    char* header_string = get_header_string(ap);
+// Print header to stdout
+void ap_print_header(struct AudioPlayer* ap) {
+    char* header_string = ap_get_header_string(ap);
     printf("%s\n", header_string);
     free(header_string);
 }
 
-void save_header(struct AudioPlayer* ap, char* filename) {
+// Save header to file specified in `filename`
+// If `filename` is NULL, then save in same location as wave file
+// but with the added extention ".txt"
+void ap_save_header(struct AudioPlayer* ap, char* filename) {
     if (filename == NULL) {
         size_t wave_filename_length = strlen(ap->filename);
         filename = malloc(wave_filename_length + 4);
@@ -144,12 +150,15 @@ void save_header(struct AudioPlayer* ap, char* filename) {
         return;
     }
     printf("Saved header to %s\n", filename);
-    char* header_string = get_header_string(ap);
+    char* header_string = ap_get_header_string(ap);
     fwrite(header_string, 1, strlen(header_string), fp);
     free(header_string);
 }
 
-bool close(struct AudioPlayer* ap) {
+
+
+
+bool ap_close(struct AudioPlayer* ap) {
     if (ap->filename != NULL) {
         free(ap->filename);
         ap->filename = NULL;
@@ -159,15 +168,6 @@ bool close(struct AudioPlayer* ap) {
         ap->data = NULL;
     }
 }
-
-
-
-// Reads a file, if it is a well-formed wave file parse its header
-// Returns: `true` if the file is a well-formed wave file,
-//          `false otherwise
-// If `false` was returned, all other functions have undefined behavior
-
-
 
 
 
