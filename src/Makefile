@@ -1,3 +1,5 @@
+.ONESHELL:
+
 sxx_key = ~/myir.key
 sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
 sxx_port = 22 #2222
