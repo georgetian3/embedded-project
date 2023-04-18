@@ -5,6 +5,8 @@
 
 int main(int argc, char** argv) {
 
+    std::cout << "main\n";
+
     argparse::ArgumentParser program("music");
     program.add_argument("filename")
         .help("Filename of the wave file");
@@ -18,6 +20,8 @@ int main(int argc, char** argv) {
     }
 
     auto filename = program.get("filename");
+
+    std::cout << "filename: " << filename << "\n";
 
 
     AudioPlayer player;
@@ -33,6 +37,9 @@ int main(int argc, char** argv) {
     player.print_header();
     player.save_header();
     std::cout << std::string(dl, '=') << '\n';
+
+    std::cout << "before play\n";
+
 
 #ifdef part2
     player.play();
