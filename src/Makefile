@@ -1,7 +1,7 @@
 sxx_key = ~/myir.key
 sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
-sxx_port = 2222
-sxx_host = root@georgetian.com
+sxx_port = 22 #2222
+sxx_host = root@192.168.1.5 #root@georgetian.com
 
 debug_exe = audioplayer-debug
 xc_exe = audioplayer-xc
@@ -33,7 +33,7 @@ alsa:
 	make alsa-lib-$(alsa_lib_version)
 
 xc: $(src_files)
-	$(xc) $(src_files) $(xc_flags) $(compile_flags) -o $(xc_exe)
+	$(xc) $(src_files) $(xc_flags) $(compile_flags) -lasound -o $(xc_exe)
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)

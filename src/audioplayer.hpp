@@ -90,23 +90,34 @@ public:
         if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, header.format_chunk.SampleRate, 0)) {
             std::cerr << "error: snd_pcm_hw_params_set_rate - " << snd_strerror(error);
         }
-        if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
-            std::cerr << "error: snd_pcm_hw_params_set_periods - " << snd_strerror(error);
-        }
+        // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
+        //     std::cerr << "error: snd_pcm_hw_params_set_periods - " << snd_strerror(error);
+        // }
         // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.Size / 20, 0)) {
         //     std::cerr << "error: snd_pcm_hw_params_set_period_time - " << snd_strerror(error);
         // }
         if (error = snd_pcm_hw_params(pcm, hw_params)) {
             std::cerr << "error: snd_pcm_hw_params - " << snd_strerror(error);
         }
-        if ((error = snd_pcm_writei(pcm, data, header.data_chunk.Size / 2)) < 0) {
-            std::cerr << "error: snd_pcm_writei - " << snd_strerror(error);
-        } else {
-            std::cout << "Frames written: " << error;
+        // if (error = snd_pcm_prepare(pcm)) {
+        //     std::cerr << "error: snd_pcm_prepare - " << snd_strerror(error);
+        // }
+        size_t chunk_size = 1024;
+        int factor = 1;
+        if (header.format_chunk.BitsPerSample == 16) {
+            factor *= 2;
         }
-        if (error = snd_pcm_drain(pcm)) {
-            std::cerr << "error: snd_pcm_drain - " << snd_strerror(error);
+        factor *= header.format_chunk.NumChannels;
+        for (int i = 0; i < header.data_chunk.Size / factor; i += chunk_size) {
+            if ((error = snd_pcm_writei(pcm, data + i * factor, chunk_size)) < 0) {
+                std::cerr << "error: snd_pcm_writei - " << snd_strerror(error);
+            } else {
+                std::cout << "Frames written: " << error << '\n';
+            }
         }
+        // if (error = snd_pcm_drain(pcm)) {
+        //     std::cerr << "error: snd_pcm_drain - " << snd_strerror(error);
+        // }
         if (error = snd_pcm_close(pcm)) {
             std::cerr << "error: snd_pcm_close - " << snd_strerror(error);
         }
