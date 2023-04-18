@@ -11,13 +11,13 @@ xc_exe = audioplayer-xc
 src_files = main.cpp audioplayer.cpp
 
 compile_flags = -Wno-parentheses
-xc_flags = 
+xc_flags = -static
 
 
 alsa_lib_version = 1.2.8
 
 debug_wav = example.wav
-xc_wav = test.wav -static
+xc_wav = test.wav
 
 debug: $(src_files)
 	g++ -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
