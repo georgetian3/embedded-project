@@ -29,8 +29,8 @@ alsa:
 	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(alsa_lib_version).tar.bz2
 	tar xf alsa-lib-$(alsa_lib_version).tar.bz2
 	cd alsa-lib-$(alsa_lib_version)
-	CC=arm-linux-gnueabihf-gcc alsa-lib-$(alsa_lib_version)/configure --enable-shared=no --enable-static=yes --host=armv7l-unknown-linux-gnueabihf
-	make alsa-lib-$(alsa_lib_version)
+	CC=arm-linux-gnueabihf-gcc ./configure --enable-shared=no --enable-static=yes --host=armv7l-unknown-linux-gnueabihf
+	make
 
 xc: $(src_files)
 	$(xc) $(src_files) $(xc_flags) $(compile_flags) -lasound -o $(xc_exe)
