@@ -34,7 +34,9 @@ int main(int argc, char** argv) {
     int dl = 32;
     std::cout << std::string(dl, '=') << '\n' << filename
         << '\n' << std::string(dl, '-') << '\n';
+    std::cout << "before print\n";
     player.print_header();
+    std::cout << "before save\n";
     player.save_header();
     std::cout << std::string(dl, '=') << '\n';
 
