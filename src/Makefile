@@ -20,7 +20,7 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	g++ -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
+	gcc -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
 
 drun:
 	./$(debug_exe) $(debug_wav)
@@ -33,7 +33,7 @@ alsa:
 	make
 
 xc: $(src_files)
-	arm-linux-gnueabihf-g++ $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
+	arm-linux-gnueabihf-gcc $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
 	
 
 ssh:

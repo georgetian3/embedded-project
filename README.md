@@ -4,10 +4,10 @@
 ## Dependencies
 
 - make
-- g++
+- gcc
 - libasound2-dev
 - make
-- g++-arm-linux-gnueabihf
+- gcc-arm-linux-gnueabihf
 
 guest additions:
 
