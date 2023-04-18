@@ -13,8 +13,6 @@ src_files = main.cpp audioplayer.cpp
 compile_flags = -Wno-parentheses
 xc_flags = libasound.a -static
 
-cc = g++
-xc = arm-linux-gnueabihf-g++
 
 alsa_lib_version = 1.2.8
 
@@ -22,7 +20,7 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	$(cc) -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
+	g++ -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
 
 drun:
 	./$(debug_exe) $(debug_wav)
@@ -35,7 +33,7 @@ alsa:
 	make
 
 xc: $(src_files)
-	$(xc) $(src_files) $(xc_flags) $(compile_flags) -lasound -o $(xc_exe)
+	arm-linux-gnueabihf-g++ $(src_files) $(xc_flags) $(compile_flags) -o $(xc_exe)
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)

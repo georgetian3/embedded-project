@@ -7,8 +7,7 @@
 - g++
 - libasound2-dev
 - make
-- automake?
-- libtool
+- g++-arm-linux-gnueabihf
 
 guest additions:
 
