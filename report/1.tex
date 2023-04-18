@@ -36,43 +36,21 @@
 在嵌入式编程环境中，我们需要尽可能的优化代码执行文件的大小和执
 行的速度，以及代码是否包含安全漏洞和可能存在的内存泄露等等）。
 
-\section{实验心得}
-
-对本次实验任务的评价，比如你在本次实验中学到了什么，实验对你的编程
-能力有没有提升，实验的难度是否过大或者过于简单，可以向助教和老师提出相
-关的意见等等。
-
-\section{编译与运行}
-
-为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{g++-arm-linux-gnueabihf} 包：
-
-\begin{codeblock}
-sudo apt install g++-arm-linux-gnueabihf
-arm-linux-gnueabihf-g++ wave.cpp -static -o music
-\end{codeblock}
-
-主机与开发板通过以太网线沟通。
-
-\newpage
-
-\section{结果}
-
-
 
 \begin{minted}[style=bw]{console}
-root@myir:~# ./music-arm 
+root@myir:~# ./audioplayer-xc 
 filename: 1 argument(s) expected. 0 provided.
 Usage: music [--help] [--version] filename
 
 Positional arguments:
-  filename      Filename of the wave file
+    filename      Filename of the wave file
 
 Optional arguments:
-  -h, --help    shows help message and exits
-  -v, --version prints version information and exits
-root@myir:~# ./music-arm music-arm 
-"music-arm" is not a valid wave file
-root@myir:~# ./music-arm test.wav 
+    -h, --help    shows help message and exits
+    -v, --version prints version information and exits
+root@myir:~# ./audioplayer-xc audioplayer-xc 
+"audioplayer-xc" is not a valid wave file
+root@myir:~# ./audioplayer-xc test.wav 
 ================================
 test.wav
 --------------------------------
@@ -95,8 +73,13 @@ DataChunk
 ================================
 \end{minted}
 
+\section{实验心得}
 
-\section{问题及其解决方法}
+对本次实验任务的评价，比如你在本次实验中学到了什么，实验对你的编程
+能力有没有提升，实验的难度是否过大或者过于简单，可以向助教和老师提出相
+关的意见等等。
+
+
 
 \begin{itemize}
     \item 开发板的 DHCP 没有自动配置 IP 地址。
@@ -105,7 +88,21 @@ DataChunk
 
     \item 在开发板上运行时出现错误：
     
-    \code{./music-arm: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./music-arm)}
+    \code{./audioplayer-xc: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./audioplayer-xc)}
     
     由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 g++ 的 \code{-static} 编译参数进行静态链接。
+
+    \item 开发板启动后，操作系统会默认开启 \code{mxapp2} 程序。在 Linux 系统上，通常输入 \keys{\ctrl+\Alt+Fn} 会切换到命令行，但是 \code{mxapp2} 似乎禁用了此功能。
+    
+
+    \item 编译 Alsa：为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到：\code{armv7l-unknown-linux-gnueabihf}
 \end{itemize}
+
+\section{编译与运行}
+
+为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{g++-arm-linux-gnueabihf} 包：
+
+\begin{codeblock}
+sudo apt install g++-arm-linux-gnueabihf
+arm-linux-gnueabihf-g++ wave.cpp -static -o music
+\end{codeblock}

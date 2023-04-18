@@ -20,10 +20,9 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	$(cc) -g $(src_files) $(compile_flags) -o $(debug_exe)
+	$(cc) -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
 
 drun:
-	make debug
 	./$(debug_exe) $(debug_wav)
 
 alsa:
