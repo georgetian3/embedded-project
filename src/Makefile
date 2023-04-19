@@ -2,8 +2,8 @@
 
 sxx_key = ~/myir.key
 sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
-sxx_port = 2222 #22
-sxx_host = root@georgetian.com#root@192.168.1.5
+sxx_port = 22#2222 #
+sxx_host = root@192.168.1.5#root@georgetian.com#
 
 debug_exe = audioplayer-debug
 xc_exe = audioplayer-xc
@@ -29,8 +29,9 @@ alsa:
 	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(alsa_lib_version).tar.bz2
 	tar xf alsa-lib-$(alsa_lib_version).tar.bz2
 	cd alsa-lib-$(alsa_lib_version)
-	CC=arm-linux-gnueabihf-gcc ./configure --enable-shared=yes --enable-static=no --host=armv7l-unknown-linux-gnueabihf
+	CC=arm-linux-gnueabihf-gcc ./configure --host=armv7l-unknown-linux-gnueabihf
 	make
+# --enable-shared=yes --enable-static=no
 
 xc: $(src_files)
 	arm-linux-gnueabihf-gcc $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
