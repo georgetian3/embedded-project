@@ -1,3 +1,6 @@
+#ifndef AUDIOPLAYER_H
+#define AUDIOPLAYER_H
+
 #ifdef part2
     #include <alsa/asoundlib.h>
 #endif
@@ -34,32 +37,32 @@ int ap_open(struct AudioPlayer* ap, char* filename) {
     err = fseek(ap->fp, 0, SEEK_END);
     if (err) {
         printf("Cannot seek\n");
-        return 2;
+        return 1;
     }
     long file_size = ftell(ap->fp);
     if (file_size == -1) {
         printf("ftell fail\n");
-        return 3;
+        return 1;
     }
     if (file_size < sizeof(struct WaveHeader)) {
         printf("Invalid wave file - header not long enough\n");
-        return 4;
+        return 2;
     }
     err = fseek(ap->fp, 0, SEEK_SET);
     if (err) {
         printf("Cannot seek\n");
-        return 2;
+        return 1;
     }
 
     size_t bytes_read = fread((void*)&ap->header, 1, sizeof(struct WaveHeader), ap->fp);
     if (bytes_read != sizeof(struct WaveHeader)) {
         printf("Invalid wave file - cannot read enough header\n");
-        return 4;
+        return 2;
     }
 
     if (ap->header.riff_chunk.Size + 8 != file_size) {
-        printf("Invalid wave file: file_size + 8 != riff_chunk.Size: %d != %d\n", ap->header.riff_chunk.Size, file_size);
-        return 4;
+        printf("Invalid wave file: file_size + 8 != riff_chunk.Size: %d != %d\n", ap->header.riff_chunk.Size, (int)file_size);
+        return 2;
     }
 
     /* printf("%d %d %d %d\n", sizeof(struct WaveHeader), ap->header.data_chunk.Size, sizeof(struct WaveHeader) + ap->header.data_chunk.Size,  file_size);
@@ -72,13 +75,13 @@ int ap_open(struct AudioPlayer* ap, char* filename) {
     ap->data = malloc(ap->header.data_chunk.Size);
     if (!ap->data) {
         printf("Invalid malloc\n");
-        return 5;
+        return 3;
     }
 
     bytes_read = fread((void*)ap->data, 1, ap->header.data_chunk.Size, ap->fp);
     if (bytes_read != ap->header.data_chunk.Size) {
         printf("Invalid wave file - cannot read enough data\n");
-        return 4;
+        return 2;
     }
 
     if (ap->header.riff_chunk.ID     != RIFF_CHUNK_ID    ||
@@ -87,7 +90,7 @@ int ap_open(struct AudioPlayer* ap, char* filename) {
         ap->header.data_chunk.ID     != DATA_CHUNK_ID) {
         
         printf("Invalid wave file - IDs and formats incorrect\n");
-        return 4;
+        return 2;
     }
 
     return 0;
@@ -117,12 +120,12 @@ char* ap_get_header_string(struct AudioPlayer* ap) {
         "DataChunk\n"
         "    ID            %.4s\n"
         "    Size          %d",
-        &h.riff_chunk.ID, h.riff_chunk.Size, &h.riff_chunk.Format,
-        &h.format_chunk.ID, h.format_chunk.Size, h.format_chunk.AudioFormat,
+        (char*)&h.riff_chunk.ID, h.riff_chunk.Size, (char*)&h.riff_chunk.Format,
+        (char*)&h.format_chunk.ID, h.format_chunk.Size, h.format_chunk.AudioFormat,
         h.format_chunk.NumChannels, h.format_chunk.SampleRate,
         h.format_chunk.ByteRate, h.format_chunk.BlockAlign,
         h.format_chunk.BitsPerSample,
-        &h.data_chunk.ID, h.data_chunk.Size
+        (char*)&h.data_chunk.ID, h.data_chunk.Size
     );
     return header_string;
 }
@@ -140,9 +143,9 @@ void ap_print_header(struct AudioPlayer* ap) {
 void ap_save_header(struct AudioPlayer* ap, char* filename) {
     if (filename == NULL) {
         size_t wave_filename_length = strlen(ap->filename);
-        filename = malloc(wave_filename_length + 4);
+        filename = malloc(wave_filename_length + 5);
         strcpy(filename, ap->filename);
-        strcpy((char*)(filename + wave_filename_length), ".txt");
+        strcpy((char*)(filename + wave_filename_length), ".txt\0");
     }
     FILE* fp = fopen(filename, "wb");
     if (!fp) {
@@ -155,17 +158,17 @@ void ap_save_header(struct AudioPlayer* ap, char* filename) {
     free(header_string);
 }
 
-
-
-
 bool ap_close(struct AudioPlayer* ap) {
-    if (ap->filename != NULL) {
+    if (ap->filename) {
         free(ap->filename);
         ap->filename = NULL;
     }
-    if (ap->data != NULL) {
+    if (ap->data) {
         free(ap->data);
         ap->data = NULL;
+    }
+    if (ap->fp) {
+        fclose(ap->fp);
     }
 }
 
@@ -173,9 +176,9 @@ bool ap_close(struct AudioPlayer* ap) {
 
 #ifdef part2
 
-bool play(struct AudioPlayer* ap, double timestamp = 0.0, double speed = 1.0, bool blocking = true) {
+bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocking) {
     if (!blocking) {
-        play(timestamp, speed, true);
+        ap_play(ap, timestamp, speed, true);
     }
     snd_pcm_t* pcm;
 
@@ -199,10 +202,10 @@ bool play(struct AudioPlayer* ap, double timestamp = 0.0, double speed = 1.0, bo
     if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
         printf("error: snd_pcm_hw_params_set_format - %s\n", snd_strerror(error));
     }
-    if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, header.format_chunk.NumChannels)) {
+    if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, ap->header.format_chunk.NumChannels)) {
         printf("error: snd_pcm_hw_params_set_channels - %s\n", snd_strerror(error));
     }
-    if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, header.format_chunk.SampleRate, 0)) {
+    if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, ap->header.format_chunk.SampleRate, 0)) {
         printf("error: snd_pcm_hw_params_set_rate - %s\n", snd_strerror(error));
     }
     // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
@@ -219,15 +222,15 @@ bool play(struct AudioPlayer* ap, double timestamp = 0.0, double speed = 1.0, bo
     // }
     size_t chunk_size = 1024;
     int factor = 1;
-    if (header.format_chunk.BitsPerSample == 16) {
+    if (ap->header.format_chunk.BitsPerSample == 16) {
         factor *= 2;
     }
-    factor *= header.format_chunk.NumChannels;
-    for (int i = 0; i < header.data_chunk.Size / factor; i += chunk_size) {
-        if ((error = snd_pcm_writei(pcm, data + i * factor, chunk_size)) < 0) {
+    factor *= ap->header.format_chunk.NumChannels;
+    for (int i = 0; i < ap->header.data_chunk.Size / factor; i += chunk_size) {
+        if ((error = snd_pcm_writei(pcm, (ap->data) + i * factor, chunk_size)) < 0) {
             printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
         } else {
-            printf("Frames written: " << error << '\n');
+            printf("Frames written: %d\n", error);
         }
     }
     // if (error = snd_pcm_drain(pcm)) {
@@ -239,8 +242,10 @@ bool play(struct AudioPlayer* ap, double timestamp = 0.0, double speed = 1.0, bo
     return true;
 }
 
-void pause() {
+void ap_pause() {
 
 }
+
+#endif
 
 #endif

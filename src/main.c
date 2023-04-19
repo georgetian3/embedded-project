@@ -1,4 +1,4 @@
-//#define part2
+#define part2
 //#define part3
 
 #include "audioplayer.h"
@@ -19,6 +19,12 @@ int main(int argc, char** argv) {
 
     ap_print_header(&ap);
     ap_save_header(&ap, NULL);
+
+
+#ifdef part2
+    ap_play(&ap, 0, 1, true);
+#endif
+
     ap_close(&ap);
 
 }

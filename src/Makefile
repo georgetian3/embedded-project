@@ -2,15 +2,15 @@
 
 sxx_key = ~/myir.key
 sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
-sxx_port = 22 #2222
-sxx_host = root@192.168.1.5#root@georgetian.com
+sxx_port = 2222 #22
+sxx_host = root@georgetian.com#root@192.168.1.5
 
 debug_exe = audioplayer-debug
 xc_exe = audioplayer-xc
 
-src_files = main.cpp audioplayer.cpp
+src_files = main.c
 
-compile_flags = -Wno-parentheses
+compile_flags = #-Wno-parentheses
 xc_flags = -static
 
 
@@ -20,7 +20,7 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	gcc -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
+	gcc -g $(src_files) $(compile_flags) -o $(debug_exe)
 
 drun:
 	./$(debug_exe) $(debug_wav)
@@ -34,7 +34,6 @@ alsa:
 
 xc: $(src_files)
 	arm-linux-gnueabihf-gcc $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
-	
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)
@@ -49,3 +48,5 @@ clean:
 	rm -f audioplayer-*
 	rm -rf alsa-lib-*
 	rm -f *.out
+	rm -f *.exe
+	rm -f *.txt
