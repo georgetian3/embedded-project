@@ -176,7 +176,7 @@ bool ap_close(struct AudioPlayer* ap) {
 
 #ifdef part2
 
-bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocking) {
+int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocking) {
     if (!blocking) {
         ap_play(ap, timestamp, speed, true);
     }
@@ -195,18 +195,23 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     // }
     if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
         printf("error: snd_pcm_hw_params_any - %s\n", snd_strerror(error));
+        return 1;
     }
     if (error = snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) {
         printf("error: snd_pcm_hw_params_set_access - %s\n", snd_strerror(error));
+        return 1;
     }
     if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
         printf("error: snd_pcm_hw_params_set_format - %s\n", snd_strerror(error));
+        return 1;
     }
     if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, ap->header.format_chunk.NumChannels)) {
         printf("error: snd_pcm_hw_params_set_channels - %s\n", snd_strerror(error));
+        return 1;
     }
     if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, ap->header.format_chunk.SampleRate, 0)) {
         printf("error: snd_pcm_hw_params_set_rate - %s\n", snd_strerror(error));
+        return 1;
     }
     // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
     //     printf("error: snd_pcm_hw_params_set_periods - %s\n", snd_strerror(error));
@@ -216,9 +221,11 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     // }
     if (error = snd_pcm_hw_params(pcm, hw_params)) {
         printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
+        return 1;
     }
     if (error = snd_pcm_prepare(pcm)) {
         printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
+        return 1;
     }
     size_t chunk_size = 1024 * 16;
     int factor = 1;
@@ -229,6 +236,7 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     for (int i = 0; i < ap->header.data_chunk.Size / factor; i += chunk_size) {
         if ((error = snd_pcm_writei(pcm, (ap->data) + i * factor, chunk_size)) < 0) {
             printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
+            return 1;
         } else {
             printf("Frames written: %d\n", error);
         }
@@ -238,8 +246,9 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     // }
     if (error = snd_pcm_close(pcm)) {
         printf("error: snd_pcm_close - %s\n", snd_strerror(error));
+        return 1;
     }
-    return true;
+    return 0;
 }
 
 void ap_pause() {
