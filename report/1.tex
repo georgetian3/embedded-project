@@ -88,21 +88,16 @@ DataChunk
 
     \item 在开发板上运行时出现错误：
     
-    \code{./audioplayer-xc: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./audioplayer-xc)}
+    \code[fontsize=\small]{./audioplayer-xc: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./audioplayer-xc)}
     
-    由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 g++ 的 \code{-static} 编译参数进行静态链接。
+    由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 gcc 的 \code{-static} 编译参数进行静态链接可以解决此问题，但是在预先调研如何链接 ALSA 的 \code{libasound} 库时遇到了静态链接产生的问题。因此决定使用动态链接并降低主机的 glibc 版本，即从 Ubuntu 22.10 切换到 Ubuntu 20.04。
 
     \item 开发板启动后，操作系统会默认开启 \code{mxapp2} 程序。在 Linux 系统上，通常输入 \keys{\ctrl+\Alt+Fn} 会切换到命令行，但是 \code{mxapp2} 似乎禁用了此功能。
     
 
-    \item 编译 Alsa：为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到：\code{armv7l-unknown-linux-gnueabihf}
+
 \end{itemize}
 
 \section{编译与运行}
 
-为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{g++-arm-linux-gnueabihf} 包：
-
-\begin{codeblock}
-sudo apt install g++-arm-linux-gnueabihf
-arm-linux-gnueabihf-g++ wave.cpp -static -o music
-\end{codeblock}
+为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{gcc-arm-linux-gnueabihf} 包：
