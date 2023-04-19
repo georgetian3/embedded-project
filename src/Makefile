@@ -11,7 +11,7 @@ xc_exe = audioplayer-xc
 src_files = main.c
 
 compile_flags = #-Wno-parentheses
-xc_flags = -include force_link_glibc_2.27.h -static-libgcc #-static
+xc_flags = #-static
 
 
 alsa_lib_version = 1.2.8
@@ -20,7 +20,7 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	gcc -g $(src_files) $(compile_flags) -o $(debug_exe)
+	gcc -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
 
 drun:
 	./$(debug_exe) $(debug_wav)
