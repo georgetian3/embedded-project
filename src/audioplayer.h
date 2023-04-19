@@ -220,7 +220,7 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     // if (error = snd_pcm_prepare(pcm)) {
     //     printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
     // }
-    size_t chunk_size = 1024;
+    size_t chunk_size = 1024 * 16;
     int factor = 1;
     if (ap->header.format_chunk.BitsPerSample == 16) {
         factor *= 2;
