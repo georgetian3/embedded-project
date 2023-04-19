@@ -1,7 +1,7 @@
 #ifndef AUDIOPLAYER_H
 #define AUDIOPLAYER_H
 
-#define part2
+//#define part2
 //#define part3
 
 #ifdef part2

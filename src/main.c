@@ -2,15 +2,20 @@
 
 int main(int argc, char** argv) {
 
-
     if (argc != 2) {
-        printf("Usage: ./audioplayer-[debug|xc] filename\n");
+        printf("Usage: ./audioplayer <filename>\n");
         return 1;
     }
 
     AudioPlayer ap;
-
-    if (ap_open(&ap, argv[1])) {
+    
+    int error;
+    if (error = ap_open(&ap, argv[1])) {
+        if (error == 1) {
+            printf("Cannot open file\n");
+        } else if (error == 2) {
+            printf("Invalid wave file\n");
+        }
         return 1;
     }
 

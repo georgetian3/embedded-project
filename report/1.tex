@@ -38,28 +38,19 @@
 
 
 \begin{minted}[style=bw]{console}
-root@myir:~# ./audioplayer-xc 
-filename: 1 argument(s) expected. 0 provided.
-Usage: music [--help] [--version] filename
-
-Positional arguments:
-    filename      Filename of the wave file
-
-Optional arguments:
-    -h, --help    shows help message and exits
-    -v, --version prints version information and exits
-root@myir:~# ./audioplayer-xc audioplayer-xc 
-"audioplayer-xc" is not a valid wave file
-root@myir:~# ./audioplayer-xc test.wav 
-================================
-test.wav
---------------------------------
+root@myir:~# ./audioplayer-arm 
+Usage: ./audioplayer <filename>
+root@myir:~# ./audioplayer-arm does-not-exist
+Cannot open file
+root@myir:~# ./audioplayer-arm audioplayer-arm 
+Invalid wave file
+root@myir:~# ./audioplayer-arm test.wav
 RIFFChunk
     ID            RIFF
     Size          589860
     Format        WAVE
 FormatChunk
-    ID            fmt
+    ID            fmt 
     Size          16
     AudioFormat   1
     NumChannels   2
@@ -70,7 +61,24 @@ FormatChunk
 DataChunk
     ID            data
     Size          589824
-================================
+Saved header to test.wav.txt
+root@myir:~# cat test.wav.txt 
+RIFFChunk
+    ID            RIFF
+    Size          589860
+    Format        WAVE
+FormatChunk
+    ID            fmt 
+    Size          16
+    AudioFormat   1
+    NumChannels   2
+    SampleRate    44100
+    ByteRate      176400
+    BlockAlign    4
+    BitsPerSample 16
+DataChunk
+    ID            data
+    Size          589824
 \end{minted}
 
 \section{实验心得}

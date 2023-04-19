@@ -4,7 +4,7 @@ int ap_open(AudioPlayer* ap, char* filename) {
     ap->filename = strdup(filename);
     ap->fp = fopen(filename, "rb");
     if (!ap->fp) {
-        printf("File not found\n");
+        //printf("File not found\n");
         return 1;
     }
 
@@ -12,33 +12,33 @@ int ap_open(AudioPlayer* ap, char* filename) {
 
     err = fseek(ap->fp, 0, SEEK_END);
     if (err) {
-        printf("Cannot seek\n");
+        //printf("Cannot seek\n");
         return 1;
     }
     long file_size = ftell(ap->fp);
     if (file_size == -1) {
-        printf("ftell fail\n");
+        //printf("ftell fail\n");
         return 1;
     }
     if (file_size < sizeof(WaveHeader)) {
-        printf("Invalid wave file - header not long enough\n");
+        //printf("Invalid wave file - header not long enough\n");
         return 2;
     }
     err = fseek(ap->fp, 0, SEEK_SET);
     if (err) {
-        printf("Cannot seek\n");
+        //printf("Cannot seek\n");
         return 1;
     }
 
     size_t bytes_read = fread((void*)&ap->header, 1, sizeof(WaveHeader), ap->fp);
     if (bytes_read != sizeof(WaveHeader)) {
-        printf("Invalid wave file - cannot read enough header\n");
+        //printf("Invalid wave file - cannot read enough header\n");
         return 2;
     }
 
 
     if (ap->header.riff_chunk.Size + 8 != file_size) {
-        printf("Invalid wave file: file_size + 8 != riff_chunk.Size: %d != %d\n", ap->header.riff_chunk.Size, (int)file_size);
+        //printf("Invalid wave file: file_size + 8 != riff_chunk.Size: %d != %d\n", ap->header.riff_chunk.Size, (int)file_size);
         return 2;
     }
 
@@ -51,13 +51,13 @@ int ap_open(AudioPlayer* ap, char* filename) {
 
     ap->data = malloc(ap->header.data_chunk.Size);
     if (!ap->data) {
-        printf("Invalid malloc\n");
+        //printf("Invalid malloc\n");
         return 3;
     }
 
     bytes_read = fread((void*)ap->data, 1, ap->header.data_chunk.Size, ap->fp);
     if (bytes_read != ap->header.data_chunk.Size) {
-        printf("Invalid wave file - cannot read enough data\n");
+        //printf("Invalid wave file - cannot read enough data\n");
         return 2;
     }
 
@@ -66,7 +66,7 @@ int ap_open(AudioPlayer* ap, char* filename) {
         ap->header.format_chunk.ID   != WAVEHEADER_FORMAT_CHUNK_ID  ||
         ap->header.data_chunk.ID     != WAVEHEADER_DATA_CHUNK_ID) {
         
-        printf("Invalid wave file - IDs and formats incorrect\n");
+        //printf("Invalid wave file - IDs and formats incorrect\n");
         return 2;
     }
 
