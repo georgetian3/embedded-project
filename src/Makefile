@@ -34,7 +34,7 @@ alsa:
 # --enable-shared=yes --enable-static=no
 
 xc: $(src_files)
-	arm-linux-gnueabihf-gcc $(src_files) libasound.a $(xc_flags) $(compile_flags) -o $(xc_exe)
+	arm-linux-gnueabihf-gcc $(src_files) libasound.so $(xc_flags) $(compile_flags) -o $(xc_exe)
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)
