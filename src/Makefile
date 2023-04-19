@@ -11,7 +11,7 @@ xc_exe = audioplayer-xc
 src_files = main.c
 
 compile_flags = #-Wno-parentheses
-xc_flags = -static
+xc_flags = #-static
 
 
 alsa_lib_version = 1.2.8
