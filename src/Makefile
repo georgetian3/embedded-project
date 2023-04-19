@@ -11,7 +11,7 @@ xc_exe = audioplayer-xc
 src_files = main.c
 
 compile_flags = #-Wno-parentheses
-xc_flags = -include force_link_glibc_2.27.h #-static
+xc_flags = -include force_link_glibc_2.27.h -static-libgcc #-static
 
 
 alsa_lib_version = 1.2.8
