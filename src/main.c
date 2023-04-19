@@ -1,4 +1,4 @@
-#define part2
+//#define part2
 //#define part3
 
 #include "audioplayer.h"

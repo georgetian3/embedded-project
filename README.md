@@ -6,7 +6,6 @@
 - make
 - gcc
 - libasound2-dev
-- make
 - gcc-arm-linux-gnueabihf
 
 guest additions:
