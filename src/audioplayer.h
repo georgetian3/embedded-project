@@ -173,7 +173,7 @@ bool ap_close(struct AudioPlayer* ap) {
 }
 
 
-
+#define part2
 #ifdef part2
 
 int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocking) {
@@ -190,43 +190,48 @@ int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blockin
 
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_hw_params_alloca(&hw_params);
+
+    if (error = snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, ap->header.format_chunk.NumChannels, ap->header.format_chunk.SampleRate, 0, 0)) {
+        printf("set error: %s\n", snd_strerror(error));
+        return 1;
+    }
     // if (error = ) {
     //     printf("alloc error %d\n", error);
     // }
-    if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
-        printf("error: snd_pcm_hw_params_any - %s\n", snd_strerror(error));
-        return 1;
-    }
-    if (error = snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) {
-        printf("error: snd_pcm_hw_params_set_access - %s\n", snd_strerror(error));
-        return 1;
-    }
-    if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
-        printf("error: snd_pcm_hw_params_set_format - %s\n", snd_strerror(error));
-        return 1;
-    }
-    if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, ap->header.format_chunk.NumChannels)) {
-        printf("error: snd_pcm_hw_params_set_channels - %s\n", snd_strerror(error));
-        return 1;
-    }
-    if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, ap->header.format_chunk.SampleRate, 0)) {
-        printf("error: snd_pcm_hw_params_set_rate - %s\n", snd_strerror(error));
-        return 1;
-    }
-    // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
-    //     printf("error: snd_pcm_hw_params_set_periods - %s\n", snd_strerror(error));
+    // if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
+    //     printf("error: snd_pcm_hw_params_any - %s\n", snd_strerror(error));
+    //     return 1;
     // }
-    // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.Size / 20, 0)) {
-    //     printf("error: snd_pcm_hw_params_set_period_time - %s\n", snd_strerror(error));
+    // if (error = snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) {
+    //     printf("error: snd_pcm_hw_params_set_access - %s\n", snd_strerror(error));
+    //     return 1;
     // }
-    if (error = snd_pcm_hw_params(pcm, hw_params)) {
-        printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
-        return 1;
-    }
-    if (error = snd_pcm_prepare(pcm)) {
-        printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
-        return 1;
-    }
+    // if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
+    //     printf("error: snd_pcm_hw_params_set_format - %s\n", snd_strerror(error));
+    //     return 1;
+    // }
+    // if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, ap->header.format_chunk.NumChannels)) {
+    //     printf("error: snd_pcm_hw_params_set_channels - %s\n", snd_strerror(error));
+    //     return 1;
+    // }
+    // if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, ap->header.format_chunk.SampleRate, 0)) {
+    //     printf("error: snd_pcm_hw_params_set_rate - %s\n", snd_strerror(error));
+    //     return 1;
+    // }
+    // // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
+    // //     printf("error: snd_pcm_hw_params_set_periods - %s\n", snd_strerror(error));
+    // // }
+    // // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.Size / 20, 0)) {
+    // //     printf("error: snd_pcm_hw_params_set_period_time - %s\n", snd_strerror(error));
+    // // }
+    // if (error = snd_pcm_hw_params(pcm, hw_params)) {
+    //     printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
+    //     return 1;
+    // }
+    // if (error = snd_pcm_prepare(pcm)) {
+    //     printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
+    //     return 1;
+    // }
     size_t chunk_size = 1024 * 16;
     int factor = 1;
     if (ap->header.format_chunk.BitsPerSample == 16) {
