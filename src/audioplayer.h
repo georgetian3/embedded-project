@@ -192,7 +192,9 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     snd_pcm_hw_params_t *hw_params;
     printf("snd_pcm_hw_params_alloca pcm\n");
 
-    snd_pcm_hw_params_alloca(&hw_params);
+    if (error = snd_pcm_hw_params_malloc(&hw_params)) {
+        printf("error: snd_pcm_hw_params_malloc - %s\n", snd_strerror(error));
+    }
     if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
         printf("error: snd_pcm_hw_params_any - %s\n", snd_strerror(error));
     }
@@ -239,6 +241,7 @@ bool ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocki
     if (error = snd_pcm_close(pcm)) {
         printf("error: snd_pcm_close - %s\n", snd_strerror(error));
     }
+    free(pcm);
     return true;
 }
 
