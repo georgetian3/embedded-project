@@ -29,7 +29,7 @@ alsa:
 	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(alsa_lib_version).tar.bz2
 	tar xf alsa-lib-$(alsa_lib_version).tar.bz2
 	cd alsa-lib-$(alsa_lib_version)
-	CC=arm-linux-gnueabihf-gcc ./configure --enable-shared=no --enable-static=yes --host=armv7l-unknown-linux-gnueabihf
+	CC=arm-linux-gnueabihf-gcc ./configure --enable-shared=yes --enable-static=no --host=armv7l-unknown-linux-gnueabihf
 	make
 
 xc: $(src_files)
