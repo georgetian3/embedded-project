@@ -228,10 +228,10 @@ int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blockin
     // // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.Size / 20, 0)) {
     // //     printf("error: snd_pcm_hw_params_set_period_time - %s\n", snd_strerror(error));
     // // }
-    // if (error = snd_pcm_hw_params(pcm, hw_params)) {
-    //     printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
+    if (error = snd_pcm_hw_params(pcm, hw_params)) {
+        printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
+        return 1;
+    }
     // if (error = snd_pcm_prepare(pcm)) {
     //     printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
     //     return 1;
