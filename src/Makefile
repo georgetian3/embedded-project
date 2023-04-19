@@ -2,16 +2,13 @@
 
 sxx_key = ~/myir.key
 sxx_args = -i $(sxx_key) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
-sxx_port = 2222#22#
-sxx_host = root@georgetian.com#root@192.168.1.5
+sxx_port = 22#2222#
+sxx_host = root@192.168.1.5#root@georgetian.com#
 
-debug_exe = audioplayer-debug
-xc_exe = audioplayer-xc
+debug_exe = audioplayer-x64
+xc_exe = audioplayer-arm
 
-src_files = main.c
-
-compile_flags = #-Wno-parentheses
-xc_flags = #-static
+src_files = main.c audioplayer.c
 
 
 alsa_lib_version = 1.2.8
@@ -20,7 +17,7 @@ debug_wav = example.wav
 xc_wav = test.wav
 
 debug: $(src_files)
-	gcc -g $(src_files) $(compile_flags) -lasound -o $(debug_exe)
+	gcc -g $(src_files) -lasound -o $(debug_exe)
 
 drun:
 	./$(debug_exe) $(debug_wav)
@@ -34,8 +31,8 @@ alsa:
 #--enable-shared=yes --enable-static=no
 
 xc: $(src_files)
-#arm-linux-gnueabihf-gcc $(src_files) alsa-lib-$(alsa_lib_version)/src/.libs/libasound.so $(xc_flags) $(compile_flags) -o $(xc_exe)
-	arm-linux-gnueabihf-gcc $(src_files) libasound.so.2 $(xc_flags) $(compile_flags) -o $(xc_exe)
+	arm-linux-gnueabihf-gcc $(src_files) alsa-lib-$(alsa_lib_version)/src/.libs/libasound.so -o $(xc_exe)
+#arm-linux-gnueabihf-gcc $(src_files) libasound.so.2 $(xc_flags) $(compile_flags) -o $(xc_exe)
 
 ssh:
 	ssh $(sxx_args) -p $(sxx_port) $(sxx_host)

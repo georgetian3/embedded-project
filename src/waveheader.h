@@ -31,9 +31,9 @@ typedef struct {
 } __attribute__((packed)) DataChunk;
 
 typedef struct {
-    RIFFChunk riff_chunk;
+    RIFFChunk   riff_chunk;
     FormatChunk format_chunk;
-    DataChunk data_chunk;
+    DataChunk   data_chunk;
 } __attribute__((packed)) WaveHeader;
 
 #endif
