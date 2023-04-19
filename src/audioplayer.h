@@ -172,8 +172,6 @@ bool ap_close(struct AudioPlayer* ap) {
     }
 }
 
-
-#define part2
 #ifdef part2
 
 int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blocking) {
@@ -191,7 +189,13 @@ int ap_play(struct AudioPlayer* ap, double timestamp, double speed, bool blockin
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_hw_params_alloca(&hw_params);
 
-    if (error = snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, ap->header.format_chunk.NumChannels, ap->header.format_chunk.SampleRate, 0, 0)) {
+    if (error = snd_pcm_set_params(
+            pcm, SND_PCM_FORMAT_S16_LE,
+            SND_PCM_ACCESS_RW_INTERLEAVED,
+            ap->header.format_chunk.NumChannels,
+            ap->header.format_chunk.SampleRate, 0, 0
+        )) {
+
         printf("set error: %s\n", snd_strerror(error));
         return 1;
     }
