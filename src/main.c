@@ -1,6 +1,3 @@
-#define part2
-//#define part3
-
 #include "audioplayer.h"
 
 int main(int argc, char** argv) {
@@ -11,7 +8,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    struct AudioPlayer ap;
+    AudioPlayer ap;
 
     if (ap_open(&ap, argv[1])) {
         return 1;
