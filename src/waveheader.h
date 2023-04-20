@@ -1,39 +1,30 @@
 #ifndef WAVEHEADER_H
 #define WAVEHEADER_H
 
-#define WAVEHEADER_RIFF_CHUNK_ID    0x46464952 // "RIFF"
-#define WAVEHEADER_RIFF_WAVE_FORMAT 0x45564157 // "WAVE"
-#define WAVEHEADER_FORMAT_CHUNK_ID  0x20746D66 // "fmt "
-#define WAVEHEADER_DATA_CHUNK_ID    0x61746164 // "data"
+#define WAVEHEADER_RIFF_ID     0x46464952 // "RIFF"
+#define WAVEHEADER_RIFF_FORMAT 0x45564157 // "WAVE"
+#define WAVEHEADER_FORMAT_ID   0x20746D66 // "fmt "
+#define WAVEHEADER_DATA_ID     0x61746164 // "data"
 
 #include <stdint.h>
 
 typedef struct {
-    uint32_t ID;                            // "RIFF"
-    uint32_t Size;                          // file size - 8
-    uint32_t Format;                        // "WAVE"
-} __attribute__((packed)) RIFFChunk;
-
-typedef struct {
-    uint32_t ID;                            // "fmt "
-    uint32_t Size;                          //
-    uint16_t AudioFormat;                   //
-    uint16_t NumChannels;                   // e.g. 2
-    uint32_t SampleRate;                    // e.g. 48000Hz
-    uint32_t ByteRate;                      //
-    uint16_t BlockAlign;                    //
-    uint16_t BitsPerSample;                 // e.g. 16
-} __attribute__((packed)) FormatChunk;
-
-typedef struct {
-    uint32_t ID;                            // "data"
-    uint32_t Size;                          // data size
-} __attribute__((packed)) DataChunk;
-
-typedef struct {
-    RIFFChunk   riff_chunk;
-    FormatChunk format_chunk;
-    DataChunk   data_chunk;
+    // RIFF chunk
+    uint32_t riff_id;       // "RIFF"
+    uint32_t chunk_size;    // file size - 8
+    uint32_t format;        // "WAVE"
+    // Format chunk
+    uint32_t format_id;     // "fmt "
+    uint32_t format_size;   // PCM = 16
+    uint16_t audio_format;  // PCM = 1
+    uint16_t channels;      // e.g. 2
+    uint32_t sample_rate;   // e.g. 48000Hz
+    uint32_t byte_rate;     // sample_rate * bit_depth * channels / 8
+    uint16_t block_align;   // bytes per sample = channels * bit_depth / 8
+    uint16_t bit_depth;     // bits per sample, e.g. 16
+    // Data chunk
+    uint32_t data_id;       // "data"
+    uint32_t data_size;     // data size = samples * channels * bit_depth / 8
 } __attribute__((packed)) WaveHeader;
 
 #endif

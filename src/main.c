@@ -8,14 +8,10 @@ int main(int argc, char** argv) {
     }
 
     AudioPlayer ap;
-    
     int error;
+    
     if (error = ap_open(&ap, argv[1])) {
-        if (error == 1) {
-            printf("Cannot open file\n");
-        } else if (error == 2) {
-            printf("Invalid wave file\n");
-        }
+        printf("%s\n", ap_errors[error]);
         return 1;
     }
 

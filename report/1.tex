@@ -1,43 +1,61 @@
 \section{实验内容}
 
-实验背景：本次实验的硬件系统采用MPU和MCU双平台设计，其中MPU用于Linux操作系统开发，MCU用于ARM体系结构与裸机编程。
-本次实验会在Linux系统下进行。
+\textbf{实验背景}：本次实验的硬件系统采用 MPU 和 MCU 双平台设计，其中 MPU 用于 Linux 操作系统开发，MCU 用于 ARM 体系结构与裸机编程。本次实验会在 Linux 系统下进行。
 
-实验前置知识：本次实验需要使用C语言来编写文件读取函数，并利用虚拟机交叉编译代码后，在开发平台上运行。
-因此需要提前掌握一定的C语言基础。
+\textbf{实验前置知识}：本次实验需要使用 C 语言来编写文件读取函数，并利用虚拟机交叉编译代码后，在开发平台上运行。因此需要提前掌握一定的 C 语言基础。
 
-实验目标：1、使用系统I/O函数读取wav音频文件，并将wav音频文件的参数输出到命令行。
-2、将读取音频文件的参数写入开发平台上的txt文件中。
-注：文件操作恤经过交叉编译并在开发平台上运行
+\textbf{实验目标}：
+
+\begin{enumerate}
+    \item 使用系统 I/O 函数读取 WAVE  音频文件，并将 WAVE 音频文件的参数输出到命令行。
+    \item 将读取音频文件的参数写入开发平台上的文本文件中。注：文件操作需经过交叉编译并在开发平台上运行。
+\end{enumerate}
 
 \section{实验部署}
 
-本次实验的实验设备是嵌入式开发板以及Windows10电脑。
-开发板上要把STM32MP157芯片对应的启动方式拨码成EMMC启动模式，并插好电源开机。
-在Windows10电脑中，实验使用Visual Studio Code进行代码编写，使用的语言为C。
-实验没有使用说明中的VMware虚拟机，而是使用WSL来进行交叉编译。
-电脑主机和开发板在实验过程中通过设置以太网ip地址和子网进行联通。
+程序的测试是在运行 Ubuntu 20.04 虚拟机的 Windows 主机上进行。Ubuntu 中需要装测试以及交叉编译的依赖，可以通过运行 \code{setup-ubuntu.sh} 安装依赖。我们没有使用提供的交叉编译链。
+
+开发板上需要将 STM32MP157 芯片启动拨码设为 EMMC 启动方式，即 101 状态，并插好电源开机。
+
+开发板与主机可以直接通过以太网线链接（见章节 \ref{sec:problem}），或通过以太网线链接到路由器。连到路由器的优点是可以通过外网访问，让所有组员可以在线上合作。开发板与主机之间的文件拷贝以及命令执行通过 Ubuntu 自带的 SCP 以及 SSH（没有使用 XShell 或 Xftp）（SSH 设置见章节 \ref{sec:compile}）。若开放给公网建议在开发板上设置公钥认证（见章节 \ref{sec:problem}）。
 
 \section{实验过程}
 
-具体实验中的操作步骤和重要的代码（注意，不要把所有代码全贴上来，只对你觉得最关键的代码环节，或者自己有创新型的优化进行说明，也可以放伪代码）；
+\subsection{源代码}
 
-操作步骤中可能出现的问题以及自己的解决方式（说的越详细越好，能够体现出你对实验，理论和系统底层的深入理解）。
+程序由以下四个源代码文件组成：
 
+\begin{itemize}
+    \item \code{waveheader.h}：定义了 Waveform Audio File Format (WAVE) 的头格式。参考的标准：
+    
+    \url{https://datatracker.ietf.org/doc/html/draft-ema-vpim-wav-00}。
+    \item \code{audioplayer.h}：包含函数声明，以及定义了保存音频播放器的状态的结构体 \code{AudioPlayer}。
+    \item \code{audioplayer.c}：实现了以下函数：
+    \begin{itemize}
+        \item \code{ap_open}：读入 WAVE 文件并将信息写入 \code{AudioPlayer}。
+        \item \code{ap_get_header_string}：格式化 WAVE 文件的参数并写入字符串。
+        \item \code{ap_print_header}：将 \code{ap_get_header_string} 产生的字符串输出到命令行。
+        \item \code{ap_save_header}：将 \code{ap_get_header_string} 产生的字符串写入文件。
+        \item \code{ap_close}：释放 \code{ap_open} 所占用的资源。
+    \end{itemize}
+    \item \code{main.c}：处理命令行参数，调用 \code{AudioPlayer} 相关的函数，输出信息以及错误。
+\end{itemize}
+
+\subsection{编译与运行}\label{sec:compile}
+
+测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。由于 Part 1 没有使用第三方库，所以不需要做额外的链接。
+
+将可执行文件拷贝到开发板上用 \code{make scp}，需要保证 \code{SXX_KEY}、\code{SXX_PORT}、\code{SXX_HOST} 变量与实际情况一致。在主机上和在开发板上正常运行程序的命令分别为 \code{make drun} 和 \code{make xrun}。
+
+\code{Makefile} 中有些注释掉的命令是为了编译以及链接 Part 2 中的 ALSA 库，可以忽略。
 
 \section{实验结果}
 
-对测试集的描述，及用图片或者图表对测试结果进行描述。
-
-有没有例外（不符合输出要求，或者达不到输出要求的样例），并分析为
-什么会出现这样的结果。
-
-分析实验在哪些方面还有改进的空间，如何提升效果，优化代码（比如
-在嵌入式编程环境中，我们需要尽可能的优化代码执行文件的大小和执
-行的速度，以及代码是否包含安全漏洞和可能存在的内存泄露等等）。
 
 
-\begin{minted}[style=bw]{console}
+\begin{multicols}{2}
+\setlength{\columnseprule}{0.4pt}
+\begin{minted}[style=bw, fontsize=\small]{console}
 root@myir:~# ./audioplayer-arm 
 Usage: ./audioplayer <filename>
 root@myir:~# ./audioplayer-arm does-not-exist
@@ -80,32 +98,50 @@ DataChunk
     ID            data
     Size          589824
 \end{minted}
+\end{multicols}
 
-\section{实验心得}
+从以上在开发板上运行的结果可见此程序有以下功能：
+\begin{itemize}
+    \item 提示程序使用方式
+    \item 提示文件不可读
+    \item 提示文件不是格式正确的 WAVE 文件
+    \item 输出 WAVE 参数
+    \item 将 WAVE 参数写入文件
+\end{itemize}
 
-对本次实验任务的评价，比如你在本次实验中学到了什么，实验对你的编程
-能力有没有提升，实验的难度是否过大或者过于简单，可以向助教和老师提出相
-关的意见等等。
+\newpage
 
+\section{实验心得}\label{sec:problem}
 
+在实验过程中遇到的问题及其解决方法如下：
 
 \begin{itemize}
-    \item 开发板的 DHCP 没有自动配置 IP 地址。
-    
-    手动在开发板以及主机上配置 IP。
+    \item 当开发板直接通过以太网线连主机，没有自动配置 IP 地址。可以在开发板以及主机上手动配置 IP。在开发板上运行：\code{ifconfig eth0 192.168.2.2}，并且在主机上如下设置：
 
-    \item 在开发板上运行时出现错误：
+    \begin{itemize}
+        \item IPv4 address: \code{192.168.2.1}
+        \item Gateway: \code{192.168.2.0}
+        \item Subnet mask: \code{255.255.255.0}
+    \end{itemize}
+
+    当开发板连路由器，会有 DHCP 自动配置 IP 地址。
+
+    \item 原本使用的虚拟机 Ubuntu 22.10 交叉编译的可执行文件在开发板上运行时出现错误：
     
-    \code[fontsize=\small]{./audioplayer-xc: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./audioplayer-xc)}
+    \code[fontsize=\small]{./audioplayer: /lib/libc.so.6: version `GLIBC_2.34' not found (required by ./audioplayer)}
     
     由于主机的 glibc 的版本大于开发板上的 glibc 版本，所以在主机上交叉编译的可执行文件在开发板上找不到需要的库。使用 gcc 的 \code{-static} 编译参数进行静态链接可以解决此问题，但是在预先调研如何链接 ALSA 的 \code{libasound} 库时遇到了静态链接产生的问题。因此决定使用动态链接并降低主机的 glibc 版本，即从 Ubuntu 22.10 切换到 Ubuntu 20.04。
 
-    \item 开发板启动后，操作系统会默认开启 \code{mxapp2} 程序。在 Linux 系统上，通常输入 \keys{\ctrl+\Alt+Fn} 会切换到命令行，但是 \code{mxapp2} 似乎禁用了此功能。
+    \item 开发板启动后，操作系统会默认开启 \code{mxapp2} 程序。在 Linux 系统上，通常输入 \keys{\ctrl+\Alt+Fn} 会切换到命令行，但是 \code{mxapp2} 似乎禁用了此功能。将 \code{/home/mxapp2} 重命名到任何其他名字，比如 \code{mxapp2.disabled} 可以禁止 \code{mxapp2} 的启动。开发板会直接进入 Weston 界面，可以访问 Weston 自带的终端模拟器，也可以使用 \keys{\ctrl+\Alt+Fn} 切换到纯文本命令行。这对 Part 1 没有影响因为 Part 1 仅仅需要 SSH 运行程序，但 Part 3 需要开发图形界面，所以预先解决了这个问题。
     
-
-
+    \item 开发板上的 SSH 服务器软件是 Dropbear 而不是熟悉的 OpenSSH，则公钥认证设置不同。大概的设置步骤如下：
+    \begin{enumerate}
+        \item 使用 \href{https://linux.die.net/man/8/dropbearkey}{\code{dropbearkey}} 生成公密钥并存放在 \code{/etc/dropbear/dropbear_rsa_host_key}。
+        \item 使用 \href{https://manpages.ubuntu.com/manpages/trusty/man1/dropbearconvert.1.html}{\code{dropbearconvert}} 将 Dropbear 格式的密钥转换成为 Ubuntu 使用的 OpenSSH 格式的密钥，并将密钥拷贝到 Ubuntu。
+        \item 修改开发板上的 \code{/etc/default/dropbear} 文件，为了开启公钥认证内容应该是
+        
+        \code{DROPBEAR_EXTRA_ARGS=" -s"}。
+        \item 重启开发板
+    \end{enumerate}
+    
 \end{itemize}
-
-\section{编译与运行}
-
-为开发板的 ARM 处理器进行交叉编译需要 Ubuntu 的 \code{gcc-arm-linux-gnueabihf} 包：
