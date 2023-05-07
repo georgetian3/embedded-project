@@ -11,7 +11,7 @@ XC_EXE = audioplayer-arm
 HEADERS = waveheader.h audioplayer.h
 SOURCES = main.c audioplayer.c
 
-#ALSA_LIB_VERSION = 1.2.8
+ALSA_LIB_VERSION = 1.2.8
 
 DEBUG_WAV = example.wav
 XC_WAV = test.wav
@@ -23,16 +23,15 @@ debug: $(SOURCES)
 drun:
 	./$(DEBUG_EXE) $(DEBUG_WAV)
 
-# alsa:
-# 	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(ALSA_LIB_VERSION).tar.bz2
-# 	tar xf alsa-lib-$(ALSA_LIB_VERSION).tar.bz2
-# 	cd alsa-lib-$(ALSA_LIB_VERSION)
-# 	CC=arm-linux-gnueabihf-gcc ./configure --host=armv7l-unknown-linux-gnueabihf
-# 	make
+alsa:
+	wget -nc https://www.alsa-project.org/files/pub/lib/alsa-lib-$(ALSA_LIB_VERSION).tar.bz2
+	tar xf alsa-lib-$(ALSA_LIB_VERSION).tar.bz2
+	cd alsa-lib-$(ALSA_LIB_VERSION)
+	CC=arm-linux-gnueabihf-gcc ./configure --host=armv7l-unknown-linux-gnueabihf
+	make
 
-xc: $(SOURCES) #alsa-lib-$(ALSA_LIB_VERSION)/src/.libs/libasound.so
-#	arm-linux-gnueabihf-gcc $(SOURCES) alsa-lib-$(ALSA_LIB_VERSION)/src/.libs/libasound.so -o $(XC_EXE)
-	arm-linux-gnueabihf-gcc $(SOURCES) -o $(XC_EXE)
+xc: $(SOURCES) libasound.so
+	arm-linux-gnueabihf-gcc $(SOURCES) libasound.so -o $(XC_EXE)
 
 ssh:
 	ssh $(SXX_ARGS) -p $(SXX_PORT) $(SXX_HOST)

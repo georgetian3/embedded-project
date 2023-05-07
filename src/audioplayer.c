@@ -43,7 +43,7 @@ int ap_get_header_string(AudioPlayer* ap, char* str) {
         "    chunk_size   %d\n"
         "    format       %.4s\n"
         "Format chunk\n"
-        "    format_tag    %.4s\n"
+        "    format_id    %.4s\n"
         "    format_size  %d\n"
         "    audio_format %d\n"
         "    channels     %d\n"

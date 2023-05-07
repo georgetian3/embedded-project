@@ -13,3 +13,4 @@ alsa-*
 *.key
 *.a
 part1
+*.so

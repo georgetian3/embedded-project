@@ -60,43 +60,43 @@ root@myir:~# ./audioplayer-arm
 Usage: ./audioplayer <filename>
 root@myir:~# ./audioplayer-arm does-not-exist
 Cannot open file
-root@myir:~# ./audioplayer-arm audioplayer-arm 
-Invalid wave file
+root@myir:~# ./audioplayer-arm audioplayer-arm
+Invalid wave
 root@myir:~# ./audioplayer-arm test.wav
-RIFFChunk
-    ID            RIFF
-    Size          589860
-    Format        WAVE
-FormatChunk
-    ID            fmt 
-    Size          16
-    AudioFormat   1
-    NumChannels   2
-    SampleRate    44100
-    ByteRate      176400
-    BlockAlign    4
-    BitsPerSample 16
-DataChunk
-    ID            data
-    Size          589824
+RIFF chunk
+    riff_id      RIFF
+    chunk_size   589860
+    format       WAVE
+Format chunk
+    format_id    fmt 
+    format_size  16
+    audio_format 1
+    channels     2
+    sample_rate  44100
+    byte_rate    176400
+    block_align  4
+    bit_depth    16
+Data chunk
+    data_id      data
+    data_size    589824
 Saved header to test.wav.txt
-root@myir:~# cat test.wav.txt 
-RIFFChunk
-    ID            RIFF
-    Size          589860
-    Format        WAVE
-FormatChunk
-    ID            fmt 
-    Size          16
-    AudioFormat   1
-    NumChannels   2
-    SampleRate    44100
-    ByteRate      176400
-    BlockAlign    4
-    BitsPerSample 16
-DataChunk
-    ID            data
-    Size          589824
+root@myir:~# cat test.wav.txt
+RIFF chunk
+    riff_id      RIFF
+    chunk_size   589860
+    format       WAVE
+Format chunk
+    format_id    fmt 
+    format_size  16
+    audio_format 1
+    channels     2
+    sample_rate  44100
+    byte_rate    176400
+    block_align  4
+    bit_depth    16
+Data chunk
+    data_id      data
+    data_size    589824
 \end{minted}
 \end{multicols}
 
