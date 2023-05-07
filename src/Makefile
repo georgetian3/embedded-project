@@ -8,17 +8,16 @@ SXX_HOST = root@192.168.1.5#root@georgetian.com#
 DEBUG_EXE = audioplayer-x64
 XC_EXE = audioplayer-arm
 
-HEADERS = waveheader.h audioplayer.h
-SOURCES = main.c audioplayer.c
+HEADERS = waveheader.h audioplayer.h audioplayer_tui.h
+SOURCES = main.c audioplayer.c audioplayer_tui.c
 
 ALSA_LIB_VERSION = 1.2.8
 
 DEBUG_WAV = example.wav
-XC_WAV = test.wav
+XC_WAV = example.wav#test.wav
 
 debug: $(SOURCES)
-#	gcc -g $(SOURCES) -lasound -o $(DEBUG_EXE)
-	gcc -g $(SOURCES) -o $(DEBUG_EXE)
+	gcc -g $(SOURCES) -lasound -lpthread -o $(DEBUG_EXE)
 
 drun:
 	./$(DEBUG_EXE) $(DEBUG_WAV)
@@ -40,7 +39,7 @@ scp: $(XC_EXE)
 	scp $(SXX_ARGS) -P $(SXX_PORT) $(XC_EXE) $(SXX_HOST):~
 
 xrun:
-	ssh -t $(SXX_ARGS) -p $(SXX_PORT) $(SXX_HOST) "./$(XC_EXE) $(XC_WAV); bash -l"
+	ssh -t $(SXX_ARGS) -p $(SXX_PORT) $(SXX_HOST) "./$(XC_EXE) $(XC_WAV) && exit; bash -l"
 
 clean:
 	rm -f audioplayer-*

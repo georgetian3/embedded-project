@@ -14,3 +14,6 @@ alsa-*
 *.a
 part1
 *.so
+alsa-lib*
+*.mp3
+*.m4a

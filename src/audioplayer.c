@@ -1,5 +1,21 @@
 #include "audioplayer.h"
 
+int ap_init(AudioPlayer* ap) {
+    ap->playing = false;
+    ap->fp = 0;
+    ap->volume = 100;
+}
+
+bool ap_is_open(AudioPlayer* ap) {
+    return !!ap->fp;
+}
+
+bool ap_is_playing(AudioPlayer* ap) {
+    return ap->playing;
+}
+
+
+
 int ap_open(AudioPlayer* ap, char* filename) {
     ap->filename = strdup(filename);
     ap->fp = fopen(filename, "rb");
@@ -108,99 +124,112 @@ int ap_close(AudioPlayer* ap) {
     if (ap->fp) {
         fclose(ap->fp);
     }
+    ap_init(ap);
     return 0;
 }
 
-#ifdef part2
 
-int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking) {
-    if (!blocking) {
-        ap_play(ap, timestamp, speed, true);
+int ap_play_(AudioPlayer* ap) {
+
+    //if (ap->speed < 0)
+
+    if (ap->timestamp < 0) {
+        ap->timestamp = 0;
     }
-    snd_pcm_t* pcm;
 
     int error;
+
+    snd_pcm_t* pcm;
+
 
     if (error = snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) {
         printf("error: snd_pcm_open - %s\n", snd_strerror(error));
     }
 
-    snd_pcm_hw_params_t *hw_params;
-    // snd_pcm_hw_params_alloca(&hw_params);
-    // if (error = snd_pcm_hw_params_any(pcm, hw_params)) {
-    //     printf("error: snd_pcm_hw_params_any - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
     if (error = snd_pcm_set_params(
             pcm, SND_PCM_FORMAT_S16_LE,
             SND_PCM_ACCESS_RW_INTERLEAVED,
-            ap->header.format_chunk.NumChannels,
-            ap->header.format_chunk.sample_rate, 1, 500000
+            ap->header.channels,
+            ap->header.sample_rate,
+            1, 500000
         )) {
 
         printf("set error: %s\n", snd_strerror(error));
         return 1;
     }
-    // if (error = ) {
-    //     printf("alloc error %d\n", error);
-    // }
-    
-    // if (error = snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) {
-    //     printf("error: snd_pcm_hw_params_set_access - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    // if (error = snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE)) {
-    //     printf("error: snd_pcm_hw_params_set_format - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    // if (error = snd_pcm_hw_params_set_channels(pcm, hw_params, ap->header.format_chunk.NumChannels)) {
-    //     printf("error: snd_pcm_hw_params_set_channels - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    // if (error = snd_pcm_hw_params_set_rate(pcm, hw_params, ap->header.format_chunk.sample_rate, 0)) {
-    //     printf("error: snd_pcm_hw_params_set_rate - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    // // if (error = snd_pcm_hw_params_set_periods(pcm, hw_params, 2, 0)) {
-    // //     printf("error: snd_pcm_hw_params_set_periods - %s\n", snd_strerror(error));
-    // // }
-    // // if (error = snd_pcm_hw_params_set_period_time(pcm, hw_params, header.format_chunk.size / 20, 0)) {
-    // //     printf("error: snd_pcm_hw_params_set_period_time - %s\n", snd_strerror(error));
-    // // }
-    // if (error = snd_pcm_hw_params(pcm, hw_params)) {
-    //     printf("error: snd_pcm_hw_params - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    // if (error = snd_pcm_prepare(pcm)) {
-    //     printf("error: snd_pcm_prepare - %s\n", snd_strerror(error));
-    //     return 1;
-    // }
-    size_t chunk_size = 1024 * 16;
+
+    size_t chunk_size = 1024 * 1024;
     int factor = 1;
-    if (ap->header.format_chunk.bits_per_sample == 16) {
+    if (ap->header.bit_depth == 16) {
         factor *= 2;
     }
-    factor *= ap->header.format_chunk.NumChannels;
-    for (int i = 0; i < ap->header.data_chunk.size / factor; i += chunk_size) {
-        if ((error = snd_pcm_writei(pcm, (ap->data) + i * factor, chunk_size)) < 0) {
-            printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
-            return 1;
-        } else {
-            printf("Frames written: %d\n", error);
+
+    factor *= ap->header.channels;
+
+    do {
+        for (int i = 0; i < !ap->pause && ap->header.data_size / factor; i += chunk_size) {
+            if ((error = snd_pcm_writei(pcm, (ap->data) + i * factor, chunk_size)) < 0) {
+                printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
+                return 1;
+            } else {
+                printf("Frames written: %d\n", error);
+            }
         }
-    }
-    // if (error = snd_pcm_drain(pcm)) {
-    //     printf("error: snd_pcm_drain - %s\n", snd_strerror(error));
-    // }
+        // if (error = snd_pcm_drain(pcm)) {
+        //     printf("error: snd_pcm_drain - %s\n", snd_strerror(error));
+        // }
+    } while (!ap->repeat);
+
     if (error = snd_pcm_close(pcm)) {
         printf("error: snd_pcm_close - %s\n", snd_strerror(error));
         return 1;
     }
+    ap->pause = false;
+    ap->playing = false;
     return 0;
 }
 
-void ap_pause() {
-
+int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking) {
+    if (ap->playing) {
+        return 1;
+    }
+    ap->playing = true;
+    return blocking ? ap_play_(ap) : pthread_create(&ap->thread, NULL, (void*)ap_play_, ap);
 }
 
-#endif
+void ap_pause(AudioPlayer* ap) {
+    if (!ap->playing) {
+        return 1;
+    }
+    //pthread_cancel(ap->thread);
+    ap->pause = true;
+    //ap->playing = false;
+}
+
+
+int ap_set_volume(AudioPlayer* ap, int volume) {
+    volume = volume < 0 ? 0 : (volume > 100 ? 100 : volume);
+
+    ap->volume = volume;
+
+    long min, max;
+    snd_mixer_t *handle;
+    snd_mixer_selem_id_t *sid;
+    const char *card = "default";
+    const char *selem_name = "Master";
+
+    snd_mixer_open(&handle, 0);
+    snd_mixer_attach(handle, card);
+    snd_mixer_selem_register(handle, NULL, NULL);
+    snd_mixer_load(handle);
+
+    snd_mixer_selem_id_alloca(&sid);
+    snd_mixer_selem_id_set_index(sid, 0);
+    snd_mixer_selem_id_set_name(sid, selem_name);
+    snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+
+    snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+    snd_mixer_selem_set_playback_volume_all(elem, volume * max / 100);
+
+    snd_mixer_close(handle);
+}
