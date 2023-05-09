@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <alsa/asoundlib.h>
+#include    
 
 
 #define AP_HEADER_STRING_LEN        1024
