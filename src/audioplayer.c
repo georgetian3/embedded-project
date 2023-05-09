@@ -1,4 +1,5 @@
 #include "audioplayer.h"
+#define min(x, y) (x < y) ? x : y
 
 int ap_init(AudioPlayer* ap) {
     ap->playing = false;
@@ -151,34 +152,35 @@ int ap_play_(AudioPlayer* ap) {
             SND_PCM_ACCESS_RW_INTERLEAVED,
             ap->header.channels,
             ap->header.sample_rate,
-            1, 500000
+            1, 100000
         )) {
 
         printf("set error: %s\n", snd_strerror(error));
         return 1;
     }
 
-    size_t chunk_size = 1024 * 1024;
-    int factor = 1;
-    if (ap->header.bit_depth == 16) {
-        factor *= 2;
-    }
+    size_t chunk_size = ap->header.byte_rate / 10;
 
-    factor *= ap->header.channels;
 
     do {
-        for (int i = 0; i < !ap->pause && ap->header.data_size / factor; i += chunk_size) {
-            if ((error = snd_pcm_writei(pcm, (ap->data) + i * factor, chunk_size)) < 0) {
+        for (int i = 0; !ap->pause && i < ap->header.data_size; i += chunk_size * ap->header.channels * 2) {
+            if ((error =
+                    snd_pcm_writei(
+                        pcm, (ap->data) + i,
+                        min(ap->header.data_size - i, chunk_size)
+                    )
+                ) < 0) {
+
                 printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
                 return 1;
             } else {
-                printf("Frames written: %d\n", error);
+                //printf("Frames written: %d\n", error);
             }
         }
         // if (error = snd_pcm_drain(pcm)) {
         //     printf("error: snd_pcm_drain - %s\n", snd_strerror(error));
         // }
-    } while (!ap->repeat);
+    } while (!ap->pause && ap->repeat);
 
     if (error = snd_pcm_close(pcm)) {
         printf("error: snd_pcm_close - %s\n", snd_strerror(error));
@@ -227,6 +229,7 @@ int ap_set_volume(AudioPlayer* ap, int volume) {
     snd_mixer_selem_id_set_index(sid, 0);
     snd_mixer_selem_id_set_name(sid, selem_name);
     snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+    if (elem == NULL)
 
     snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
     snd_mixer_selem_set_playback_volume_all(elem, volume * max / 100);
