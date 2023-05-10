@@ -1,6 +1,8 @@
 #include "audioplayer.h"
 #define min(x, y) (x < y) ? x : y
 
+
+
 int ap_init(AudioPlayer* ap) {
     ap->playing = false;
     ap->fp = 0;
@@ -214,25 +216,66 @@ int ap_set_volume(AudioPlayer* ap, int volume) {
 
     ap->volume = volume;
 
-    long min, max;
     snd_mixer_t *handle;
     snd_mixer_selem_id_t *sid;
-    const char *card = "default";
-    const char *selem_name = "Master";
-
-    snd_mixer_open(&handle, 0);
-    snd_mixer_attach(handle, card);
-    snd_mixer_selem_register(handle, NULL, NULL);
-    snd_mixer_load(handle);
-
+    snd_mixer_elem_t* elem;
+    long minv, maxv;
+    
+    // 初始化snd_mixer_selem_id_t结构体
     snd_mixer_selem_id_alloca(&sid);
+
+    // 打开混音器设备
+    if (snd_mixer_open(&handle, 0) < 0) {
+        return -1;
+    }
+    if (snd_mixer_attach(handle, "default") < 0) { 
+        snd_mixer_close(handle);
+        return -2;
+    }
+    if (snd_mixer_selem_register(handle, NULL, NULL) < 0) {
+        snd_mixer_close(handle);
+        return -3;
+    }
+    if (snd_mixer_load(handle) < 0) {
+        snd_mixer_close(handle);
+        return -4;
+    }
+
+    // 设置混音器的简单元素索引和名称
     snd_mixer_selem_id_set_index(sid, 0);
-    snd_mixer_selem_id_set_name(sid, selem_name);
-    snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
-    if (elem == NULL)
+    snd_mixer_selem_id_set_name(sid, "Master");
 
-    snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
-    snd_mixer_selem_set_playback_volume_all(elem, volume * max / 100);
+    // 通过名称找到混音器元素
+    elem = snd_mixer_find_selem(handle, sid);
+    if (!elem) {
+        snd_mixer_close(handle);
+        return -5;
+    }
 
+    // 获取音量范围
+    snd_mixer_selem_get_playback_volume_range(elem, &minv, &maxv);
+
+    printf("%d %d\n", minv, maxv);
+
+    int ret = snd_mixer_selem_has_playback_volume(elem);
+
+    printf("has playback: %d\n", ret);
+
+
+
+    // 根据指定的音量百分比设置音量
+    ret = snd_mixer_selem_set_playback_volume_all(elem, volume * 6.55);
+
+    if (ret != 0) {
+        printf("%s\n", snd_strerror(ret));
+    }
+
+
+    // 更新AudioPlayer的音量值
+    ap->volume = volume;
+
+    // 关闭混音器设备
     snd_mixer_close(handle);
+    
+    return 0;
 }

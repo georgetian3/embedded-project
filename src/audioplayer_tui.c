@@ -56,10 +56,14 @@ void ap_tui() {
         } else if (!ap_is_open(&ap)) {
             printf("No file opened\n");
         } else if (streq(cmd, "+")) {
-            ap_set_volume(&ap, ap.volume + 10);
+            int ret = ap_set_volume(&ap, ap.volume + 10);
+            printf("%d\n", ret);
             printf("Volume: %d\n", ap.volume);
         } else if (streq(cmd, "-")) {
-            ap_set_volume(&ap, ap.volume - 10);
+
+            int ret = ap_set_volume(&ap, ap.volume - 10);
+            printf("%d\n", ret);
+
             printf("Volume: %d\n", ap.volume);
         } else if (streq(cmd, "i")) {
             ap_print_header(&ap);

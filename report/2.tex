@@ -1,1 +1,64 @@
-\item 编译 Alsa：为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到：\code{armv7l-unknown-linux-gnueabihf}
+
+\section{实验内容}
+
+\textbf{实验背景}：本次实验的硬件系统采用 MPU 和 MCU 双平台设计，其中 MPU 用于 Linux 操作系统开发，MCU 用于 ARM 体系结构与裸机编程。本次实验会在 Linux 系统下进行。
+
+\textbf{实验前置知识}：本次实验需要使用 C 语言来编写文件读取函数，并利用虚拟机交叉编译代码后，在开发平台上运行。因此需要提前掌握一定的 C 语言基础。
+
+\textbf{实验目标}：
+
+
+
+\section{实验部署}
+
+程序的测试是在运行 Ubuntu 20.04 虚拟机的 Windows 主机上进行。Ubuntu 中需要装测试以及交叉编译的依赖，可以通过运行 \code{setup-ubuntu.sh} 安装依赖。我们没有使用提供的交叉编译链。
+
+开发板上需要将 STM32MP157 芯片启动拨码设为 EMMC 启动方式，即 101 状态，并插好电源开机。
+
+开发板与主机可以直接通过以太网线链接（见章节 \ref{sec:problem}），或通过以太网线链接到路由器。连到路由器的优点是可以通过外网访问，让所有组员可以在线上合作。开发板与主机之间的文件拷贝以及命令执行通过 Ubuntu 自带的 SCP 以及 SSH（没有使用 XShell 或 Xftp）（SSH 设置见章节 \ref{sec:compile}）。若开放给公网建议在开发板上设置公钥认证（见章节 \ref{sec:problem}）。
+
+\section{实验过程}
+
+\subsection{源代码}
+
+程序由以下四个源代码文件组成：
+
+\begin{itemize}
+    \item \code{waveheader.h}：定义了 Waveform Audio File Format (WAVE) 的头格式。参考的标准：
+    
+    \url{https://datatracker.ietf.org/doc/html/draft-ema-vpim-wav-00}。
+    \item \code{audioplayer.h}：包含函数声明，以及定义了保存音频播放器的状态的结构体 \code{AudioPlayer}。
+    \item \code{audioplayer.c}：实现了以下函数：
+    \begin{itemize}
+        \item \code{ap_open}：读入 WAVE 文件并将信息写入 \code{AudioPlayer}。
+        \item \code{ap_get_header_string}：格式化 WAVE 文件的参数并写入字符串。
+        \item \code{ap_print_header}：将 \code{ap_get_header_string} 产生的字符串输出到命令行。
+        \item \code{ap_save_header}：将 \code{ap_get_header_string} 产生的字符串写入文件。
+        \item \code{ap_close}：释放 \code{ap_open} 所占用的资源。
+    \end{itemize}
+    \item \code{main.c}：处理命令行参数，调用 \code{AudioPlayer} 相关的函数，输出信息以及错误。
+\end{itemize}
+
+\subsection{编译与运行}\label{sec:compile}
+
+测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。由于 Part 1 没有使用第三方库，所以不需要做额外的链接。
+
+将可执行文件拷贝到开发板上用 \code{make scp}，需要保证 \code{SXX_KEY}、\code{SXX_PORT}、\code{SXX_HOST} 变量与实际情况一致。在主机上和在开发板上正常运行程序的命令分别为 \code{make drun} 和 \code{make xrun}。
+
+\code{Makefile} 中有些注释掉的命令是为了编译以及链接 Part 2 中的 ALSA 库，可以忽略。
+
+\section{实验结果}
+
+
+
+
+\newpage
+
+\section{实验心得}\label{sec:problem}
+
+在实验过程中遇到的问题及其解决方法如下：
+
+\begin{itemize}
+    \item 编译 Alsa：为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到：\code{armv7l-unknown-linux-gnueabihf}
+    
+\end{itemize}
