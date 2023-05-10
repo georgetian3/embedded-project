@@ -21,35 +21,31 @@
 
 \subsection{源代码}
 
-程序由以下四个源代码文件组成：
+
+Part 2 是在 Part 1 的 \code{waveheader.h}、\code{audioplayer.h}、\code{audioplayer.c}、\code{main.c} 的基础上开发的。之前的代码在 Part 1 已经解释了所以不再阐述，而新添加的代码如下：
 
 \begin{itemize}
-    \item \code{waveheader.h}：定义了 Waveform Audio File Format (WAVE) 的头格式。参考的标准：
-    
-    \url{https://datatracker.ietf.org/doc/html/draft-ema-vpim-wav-00}。
-    \item \code{audioplayer.h}：包含函数声明，以及定义了保存音频播放器的状态的结构体 \code{AudioPlayer}。
-    \item \code{audioplayer.c}：实现了以下函数：
+    \item \code{audioplayer.h}：在 \code{AudioPlayer} 结构体中添加了保存播放器状态的变量，包括目前的音量、播放线程、播放/暂停状态、目前的时间戳、播放速度、是否重复播放等等。由于 Part 2 对一些功能没有要求，所以许多变量目前没有起到作用。
+    \item \code{audioplayer.c}：主要实现了以下函数：
     \begin{itemize}
-        \item \code{ap_open}：读入 WAVE 文件并将信息写入 \code{AudioPlayer}。
-        \item \code{ap_get_header_string}：格式化 WAVE 文件的参数并写入字符串。
-        \item \code{ap_print_header}：将 \code{ap_get_header_string} 产生的字符串输出到命令行。
-        \item \code{ap_save_header}：将 \code{ap_get_header_string} 产生的字符串写入文件。
-        \item \code{ap_close}：释放 \code{ap_open} 所占用的资源。
+        \item \code{ap_play}：开始播放。其中调用了 \code{alsa-lib} 的以 \code{snd_pcm} 开头的函数。播放可以在新线程中运行，以免阻塞 UI 线程。
+        \item \code{ap_pause}：暂停播放，目前的实现没有保存时间戳，所以再次调用 \code{ap_play} 会从头开始播放。
+        \item \code{ap_set_volume}：改变播放音量。其中调用了 \code{alsa-lib} 的以 \code{snd_mixer} 开头的函数。
     \end{itemize}
-    \item \code{main.c}：处理命令行参数，调用 \code{AudioPlayer} 相关的函数，输出信息以及错误。
+    \item \code{audioplayer_tui.c}：通过 \code{ap_tui} 函数实现了文本用户界面。通过输入命令可以打开 WAVE 文件、播放/暂停、改变音量、设置重复播放、输出 WAVE 文件以及播放信息、以及退出程序。
+    \item \code{main.c}：调用 \code{ap_tui}。
 \end{itemize}
 
 \subsection{编译与运行}\label{sec:compile}
 
-测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。由于 Part 1 没有使用第三方库，所以不需要做额外的链接。
+测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。需要链接两个库：\code{libasound}（\code{}）
 
 将可执行文件拷贝到开发板上用 \code{make scp}，需要保证 \code{SXX_KEY}、\code{SXX_PORT}、\code{SXX_HOST} 变量与实际情况一致。在主机上和在开发板上正常运行程序的命令分别为 \code{make drun} 和 \code{make xrun}。
 
-\code{Makefile} 中有些注释掉的命令是为了编译以及链接 Part 2 中的 ALSA 库，可以忽略。
 
 \section{实验结果}
 
-
+以下是
 
 
 \newpage

@@ -80,22 +80,12 @@ void ap_tui() {
                 printf("Playing\n");
                 ap_play(&ap, ap.timestamp, ap.speed, false);
             }
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
-        } else if (streq(cmd, "o")) {
-            printf("Filename: ");
         } else {
             printf("Invalid command\n");
         }
 
     }
+
+    ap_close(&ap);
 
 }

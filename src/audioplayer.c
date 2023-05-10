@@ -201,7 +201,7 @@ int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking) {
     return blocking ? ap_play_(ap) : pthread_create(&ap->thread, NULL, (void*)ap_play_, ap);
 }
 
-void ap_pause(AudioPlayer* ap) {
+int ap_pause(AudioPlayer* ap) {
     if (!ap->playing) {
         return 1;
     }

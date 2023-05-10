@@ -67,7 +67,7 @@ int ap_close(AudioPlayer* ap);
 
 
 int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking);
-void ap_pause(AudioPlayer* ap);
+int ap_pause(AudioPlayer* ap);
 
 int ap_set_volume(AudioPlayer* ap, int volume);
 
