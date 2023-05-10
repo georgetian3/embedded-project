@@ -15,14 +15,14 @@
 
 开发板上需要将 STM32MP157 芯片启动拨码设为 EMMC 启动方式，即 101 状态，并插好电源开机。
 
-开发板与主机可以直接通过以太网线链接（见章节 \ref{sec:problem}），或通过以太网线链接到路由器。连到路由器的优点是可以通过外网访问，让所有组员可以在线上合作。开发板与主机之间的文件拷贝以及命令执行通过 Ubuntu 自带的 SCP 以及 SSH（没有使用 XShell 或 Xftp）（SSH 设置见章节 \ref{sec:compile}）。若开放给公网建议在开发板上设置公钥认证（见章节 \ref{sec:problem}）。
+开发板与主机可以直接通过以太网线链接，或通过以太网线链接到路由器。连到路由器的优点是可以通过外网访问，让所有组员可以在线上合作。开发板与主机之间的文件拷贝以及命令执行通过 Ubuntu 自带的 SCP 以及 SSH（没有使用 XShell 或 Xftp）。若开放给公网建议在开发板上设置公钥认证。
 
 \section{实验过程}
 
 \subsection{源代码}
 
 
-Part 2 是在 Part 1 的 \code{waveheader.h}、\code{audioplayer.h}、\code{audioplayer.c}、\code{main.c} 的基础上开发的。之前的代码在 Part 1 已经解释了所以不再阐述，而新添加的代码如下：
+Part 2 是在 Part 1 的 \code{waveheader.h}、\code{audioplayer.h}、\code{audioplayer.c}、\code{main.c} 的基础上开发的，即没有使用助教提供的框架。之前的代码在 Part 1 已经解释了所以不再阐述，而新添加的代码如下：
 
 \begin{itemize}
     \item \code{audioplayer.h}：在 \code{AudioPlayer} 结构体中添加了保存播放器状态的变量，包括目前的音量、播放线程、播放/暂停状态、目前的时间戳、播放速度、是否重复播放等等。由于 Part 2 对一些功能没有要求，所以许多变量目前没有起到作用。

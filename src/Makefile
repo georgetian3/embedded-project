@@ -2,8 +2,8 @@
 
 SXX_KEY = ~/myir.key
 SXX_ARGS = -i $(SXX_KEY) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
-SXX_PORT = 22#2222#
-SXX_HOST = root@192.168.1.5#root@georgetian.com#root@192.168.2.2#
+SXX_PORT = 2222#22#
+SXX_HOST = root@59.66.244.24#root@georgetian.com#root@192.168.2.2#root@192.168.1.5#
 
 DEBUG_EXE = audioplayer-x64
 XC_EXE = audioplayer-arm
@@ -30,9 +30,10 @@ alsa:
 	make
 
 copy-libs:
-	scp
+	scp $(SXX_ARGS) -P $(SXX_PORT) $(SXX_HOST):/usr/lib/libasound.so.2 libasound.so
+	scp $(SXX_ARGS) -P $(SXX_PORT) $(SXX_HOST):/usr/lib/libgthread-2.0.so.0 libgthread.so
 
-xc: $(SOURCES) libasound.so
+xc: $(SOURCES) libasound.so libgthread.so
 	arm-linux-gnueabihf-gcc $(SOURCES) libasound.so libgthread.so -lpthread -o $(XC_EXE)
 
 ssh:
