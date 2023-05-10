@@ -133,8 +133,6 @@ int ap_close(AudioPlayer* ap) {
 
 int ap_play_(AudioPlayer* ap) {
 
-    //if (ap->speed < 0)
-
     if (ap->timestamp < 0) {
         ap->timestamp = 0;
     }
@@ -161,12 +159,10 @@ int ap_play_(AudioPlayer* ap) {
     do {
         for (int i = 0; !ap->pause && i < ap->header.data_size; i += chunk_size * ap->header.channels * 2) {
 
-            if ((ret =
-                    snd_pcm_writei(
-                        pcm, (ap->data) + i,
-                        min(ap->header.data_size - i, chunk_size)
-                    )
-                ) < 0) {
+            if ((ret = snd_pcm_writei(
+                    pcm, (ap->data) + i,
+                    min(ap->header.data_size - i, chunk_size)
+                )) < 0) {
 
                 return ret;
             } else {
@@ -214,23 +210,17 @@ int ap_set_volume(AudioPlayer* ap, int volume) {
     
     snd_mixer_selem_id_alloca(&sid);
 
-
     error_ret(snd_mixer_open(&handle, 0))
     error_ret(snd_mixer_attach(handle, "default"))
     error_ret(snd_mixer_selem_register(handle, NULL, NULL))
     error_ret(snd_mixer_load(handle))
-    error_ret(snd_mixer_open(&handle, 0))
-
 
     snd_mixer_selem_id_set_index(sid, 0);
     snd_mixer_selem_id_set_name(sid, "Master");
     snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
     if (!elem) {
-        printf("Elem = NULL");
         return 1;
     }
-
-
 
     long minv, maxv;
     snd_mixer_selem_get_playback_volume_range(elem, &minv, &maxv);

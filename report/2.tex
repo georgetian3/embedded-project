@@ -38,23 +38,76 @@ Part 2 是在 Part 1 的 \code{waveheader.h}、\code{audioplayer.h}、\code{audi
 
 \subsection{编译与运行}\label{sec:compile}
 
-测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。需要链接两个库：\code{libasound}（\code{}）
+测试编译（\code{make debug}）以及交叉编译（\code{make xc}）的命令都在 \code{Makefile} 中定义。使用的交叉编译器是 \code{arm-linux-gnueabihf-gcc}。需要链接两个库：用于播放声音的 \code{libasound} 以及用于实现多线程的 \code{pthread}。在 Ubuntu 测试系统上使用仅仅使用 \code{-lasound} 以及 \code{-lpthread} 编译参数。但是在开发板运行需要为 ARM CPU 架构编译的库。可以使用 \code{make alsa} 下载 \code{alsa-lib} 源代码并编译动态链接库，或者使用 \code{make copy-libs} 将开发板上已有 \code{libasound.so} 以及 \code{libgthread.so} 的动态链接库拷贝到主机。
 
 将可执行文件拷贝到开发板上用 \code{make scp}，需要保证 \code{SXX_KEY}、\code{SXX_PORT}、\code{SXX_HOST} 变量与实际情况一致。在主机上和在开发板上正常运行程序的命令分别为 \code{make drun} 和 \code{make xrun}。
 
-
 \section{实验结果}
 
-以下是
+以下是程序的操作流程。类似的演示在 \code{demo.mp4} 中所示。
 
+\begin{multicols}{2}
+\begin{minted}{console}
+root@myir:~# ./audioplayer-arm
+Audio Player
+o: open file
+i: print file and playback info
+p: toggle play/pause
+r: toggle repeat
+h: print this help
+v: set volume
+q: quit
+> i
+No file opened
+> o
+Filename: doesnotexist
+Error: Cannot open file
+> o
+Filename: example.wav
+Opened
+> i
+RIFF chunk
+    riff_id      RIFF
+    chunk_size   2665816
+    format       WAVE
+Format chunk
+    format_id    fmt
+    format_size  16
+    audio_format 1
+    channels     2
+    sample_rate  44100
+    byte_rate    176400
+    block_align  4
+    bit_depth    16
+Data chunk
+    data_id      data
+    data_size    2665676
+
+Playing   no
+Timestamp 0.00s
+Speed     0.0x
+Repeating no
+> p
+Playing
+> v
+Volume: 50
+Volume set to: 50
+> v
+Volume: 100
+Volume set to: 100
+> q
+root@myir:~#
+\end{minted}
+\end{multicols}
 
 \newpage
 
 \section{实验心得}\label{sec:problem}
 
-在实验过程中遇到的问题及其解决方法如下：
+主要的开发环境以及与开发板通讯的问题已经在 Part 1 中解决了。Part 2 实验过程中遇到的问题及其解决方法如下：
 
 \begin{itemize}
-    \item 编译 Alsa：为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到：\code{armv7l-unknown-linux-gnueabihf}
-    
+    \item 编译 Alsa：之前不知道需要的动态链接库已存放在开发板上的 \code{/usr/lib} 中，所以从 \code{alsa-lib} 源代码编译了 \code{libasound.so}。编译命令用 \code{make alsa} 运行，参考了 \href{https://github.com/michaelwu/alsa-lib/blob/master/INSTALL}。编译时需要设定目标平台类型。为了得到开发板的平台信息，需要将 \code{config.guess} 拷贝到开发板上并运行，得到 \code{armv7l-unknown-linux-gnueabihf}
+    由于提前发现 \code{libgthread.so} 在开发板上的存在，因此没有试图从源代码编译 \code{libgthread}
+    \item 音量调节：遇到了改变音量但是播放的音量没有变化的问题。通过课程微信群中的同学的提示，发现读出的音量范围比实际范围大了一百倍。因此将音量再除以一百就解决了问题。
 \end{itemize}

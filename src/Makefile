@@ -29,6 +29,9 @@ alsa:
 	CC=arm-linux-gnueabihf-gcc ./configure --host=armv7l-unknown-linux-gnueabihf
 	make
 
+copy-libs:
+	scp
+
 xc: $(SOURCES) libasound.so
 	arm-linux-gnueabihf-gcc $(SOURCES) libasound.so libgthread.so -lpthread -o $(XC_EXE)
 

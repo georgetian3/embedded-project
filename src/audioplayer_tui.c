@@ -25,7 +25,7 @@ void gl(char* buffer, int count) {
 
 #define streq(x, y) strcmp(x, y) == 0
 
-void ap_tui() {
+int ap_tui() {
 
     AudioPlayer ap;
     ap_init(&ap);
@@ -42,7 +42,7 @@ void ap_tui() {
         } else if (streq(cmd, "o")) {
             printf("Filename: ");
             gl(cmd, MAX_CMD_LEN);
-            if (ret = ap_open(&ap, "example.wav")) {
+            if (ret = ap_open(&ap, cmd)) {
                 printf("Error: %s\n", ap_errors[ret]);
             } else {
                 printf("Opened\n");
@@ -62,9 +62,9 @@ void ap_tui() {
                 printf("Invalid volume\n");
             } else if (ret = ap_set_volume(&ap, volume)) {
                 if (ret < 0) {
-                    printf("Set volume error: %s\n", snd_strerror(ret));
+                    printf("Error: %s\n", snd_strerror(ret));
                 } else {
-                    printf("???\n");
+                    printf("Error\n");
                 }
             } else {
                 printf("Volume set to: %d\n", ap.volume);
@@ -91,5 +91,6 @@ void ap_tui() {
     }
 
     ap_close(&ap);
+    return 0;
 
 }

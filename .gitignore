@@ -12,8 +12,9 @@ hello-wayland
 alsa-*
 *.key
 *.a
-part1
+part*/
 *.so
 alsa-lib*
 *.mp3
 *.m4a
+*.mp4
