@@ -10,7 +10,6 @@
 #include <string.h>
 #include <alsa/asoundlib.h>
 
-
 #define AP_HEADER_STRING_LEN        1024
 #define AP_ERROR_MALLOC             1
 #define AP_ERROR_CANNOT_OPEN_FILE   2
@@ -69,6 +68,10 @@ int ap_close(AudioPlayer* ap);
 int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking);
 int ap_pause(AudioPlayer* ap);
 
+
+// volume must be in range [0, 100]
+// otherwise will be rounded to nearest int
+// e.g. -10 -> 0, 104 -> 100
 int ap_set_volume(AudioPlayer* ap, int volume);
 
 #endif

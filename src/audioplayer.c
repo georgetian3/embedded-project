@@ -1,7 +1,7 @@
 #include "audioplayer.h"
 #define min(x, y) (x < y) ? x : y
 
-
+#define error_ret(expr) if (ret = expr) {return ret;}
 
 int ap_init(AudioPlayer* ap) {
     ap->playing = false;
@@ -17,9 +17,8 @@ bool ap_is_playing(AudioPlayer* ap) {
     return ap->playing;
 }
 
-
-
 int ap_open(AudioPlayer* ap, char* filename) {
+    ap_close(ap);
     ap->filename = strdup(filename);
     ap->fp = fopen(filename, "rb");
     if (!ap->fp) {
@@ -140,43 +139,38 @@ int ap_play_(AudioPlayer* ap) {
         ap->timestamp = 0;
     }
 
-    int error;
+    int ret;
 
     snd_pcm_t* pcm;
 
+    error_ret(snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0));
 
-    if (error = snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) {
-        printf("error: snd_pcm_open - %s\n", snd_strerror(error));
-    }
-
-    if (error = snd_pcm_set_params(
+    error_ret(
+        snd_pcm_set_params(
             pcm, SND_PCM_FORMAT_S16_LE,
             SND_PCM_ACCESS_RW_INTERLEAVED,
             ap->header.channels,
             ap->header.sample_rate,
             1, 100000
-        )) {
-
-        printf("set error: %s\n", snd_strerror(error));
-        return 1;
-    }
+        )
+    )
 
     size_t chunk_size = ap->header.byte_rate / 10;
 
 
     do {
         for (int i = 0; !ap->pause && i < ap->header.data_size; i += chunk_size * ap->header.channels * 2) {
-            if ((error =
+
+            if ((ret =
                     snd_pcm_writei(
                         pcm, (ap->data) + i,
                         min(ap->header.data_size - i, chunk_size)
                     )
                 ) < 0) {
 
-                printf("error: snd_pcm_writei - %s\n", snd_strerror(error));
-                return 1;
+                return ret;
             } else {
-                //printf("Frames written: %d\n", error);
+                //printf("Frames written: %d\n", ret);
             }
         }
         // if (error = snd_pcm_drain(pcm)) {
@@ -184,12 +178,10 @@ int ap_play_(AudioPlayer* ap) {
         // }
     } while (!ap->pause && ap->repeat);
 
-    if (error = snd_pcm_close(pcm)) {
-        printf("error: snd_pcm_close - %s\n", snd_strerror(error));
-        return 1;
-    }
+    error_ret(snd_pcm_close(pcm))
     ap->pause = false;
     ap->playing = false;
+
     return 0;
 }
 
@@ -213,68 +205,38 @@ int ap_pause(AudioPlayer* ap) {
 
 int ap_set_volume(AudioPlayer* ap, int volume) {
     volume = volume < 0 ? 0 : (volume > 100 ? 100 : volume);
-
     ap->volume = volume;
 
     snd_mixer_t *handle;
     snd_mixer_selem_id_t *sid;
-    snd_mixer_elem_t* elem;
-    long minv, maxv;
+
+    int ret;
     
-    // 初始化snd_mixer_selem_id_t结构体
     snd_mixer_selem_id_alloca(&sid);
 
-    // 打开混音器设备
-    if (snd_mixer_open(&handle, 0) < 0) {
-        return -1;
-    }
-    if (snd_mixer_attach(handle, "default") < 0) { 
-        snd_mixer_close(handle);
-        return -2;
-    }
-    if (snd_mixer_selem_register(handle, NULL, NULL) < 0) {
-        snd_mixer_close(handle);
-        return -3;
-    }
-    if (snd_mixer_load(handle) < 0) {
-        snd_mixer_close(handle);
-        return -4;
-    }
 
-    // 设置混音器的简单元素索引和名称
+    error_ret(snd_mixer_open(&handle, 0))
+    error_ret(snd_mixer_attach(handle, "default"))
+    error_ret(snd_mixer_selem_register(handle, NULL, NULL))
+    error_ret(snd_mixer_load(handle))
+    error_ret(snd_mixer_open(&handle, 0))
+
+
     snd_mixer_selem_id_set_index(sid, 0);
     snd_mixer_selem_id_set_name(sid, "Master");
-
-    // 通过名称找到混音器元素
-    elem = snd_mixer_find_selem(handle, sid);
+    snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
     if (!elem) {
-        snd_mixer_close(handle);
-        return -5;
+        printf("Elem = NULL");
+        return 1;
     }
 
-    // 获取音量范围
+
+
+    long minv, maxv;
     snd_mixer_selem_get_playback_volume_range(elem, &minv, &maxv);
 
-    printf("%d %d\n", minv, maxv);
+    error_ret(snd_mixer_selem_set_playback_volume_all(elem, minv + volume * maxv / 10000))
 
-    int ret = snd_mixer_selem_has_playback_volume(elem);
-
-    printf("has playback: %d\n", ret);
-
-
-
-    // 根据指定的音量百分比设置音量
-    ret = snd_mixer_selem_set_playback_volume_all(elem, volume * 6.55);
-
-    if (ret != 0) {
-        printf("%s\n", snd_strerror(ret));
-    }
-
-
-    // 更新AudioPlayer的音量值
-    ap->volume = volume;
-
-    // 关闭混音器设备
     snd_mixer_close(handle);
     
     return 0;

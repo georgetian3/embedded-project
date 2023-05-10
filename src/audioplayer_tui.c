@@ -9,8 +9,7 @@ const char help[] =
 "p: toggle play/pause\n"
 "r: toggle repeat\n"
 "h: print this help\n"
-"+: volume + 10\n"
-"-: volume - 10\n"
+"v: set volume\n"
 "q: quit\n";
 
 const char yes[] = "yes";
@@ -30,7 +29,7 @@ void ap_tui() {
 
     AudioPlayer ap;
     ap_init(&ap);
-    int error;
+    int ret;
 
     char cmd[MAX_CMD_LEN];
     printf(help);
@@ -43,8 +42,8 @@ void ap_tui() {
         } else if (streq(cmd, "o")) {
             printf("Filename: ");
             gl(cmd, MAX_CMD_LEN);
-            if (error = ap_open(&ap, "example.wav")) {
-                printf("Error: %s\n", ap_errors[error]);
+            if (ret = ap_open(&ap, "example.wav")) {
+                printf("Error: %s\n", ap_errors[ret]);
             } else {
                 printf("Opened\n");
             }
@@ -55,16 +54,21 @@ void ap_tui() {
             printf(ap.repeat ? "Repeating\n" : "No repeating\n");
         } else if (!ap_is_open(&ap)) {
             printf("No file opened\n");
-        } else if (streq(cmd, "+")) {
-            int ret = ap_set_volume(&ap, ap.volume + 10);
-            printf("%d\n", ret);
-            printf("Volume: %d\n", ap.volume);
-        } else if (streq(cmd, "-")) {
-
-            int ret = ap_set_volume(&ap, ap.volume - 10);
-            printf("%d\n", ret);
-
-            printf("Volume: %d\n", ap.volume);
+        } else if (streq(cmd, "v")) {
+            printf("Volume: ");
+            gl(cmd, MAX_CMD_LEN);
+            int volume;
+            if ((ret = sscanf(cmd, "%d", &volume)) == EOF) {
+                printf("Invalid volume\n");
+            } else if (ret = ap_set_volume(&ap, volume)) {
+                if (ret < 0) {
+                    printf("Set volume error: %s\n", snd_strerror(ret));
+                } else {
+                    printf("???\n");
+                }
+            } else {
+                printf("Volume set to: %d\n", ap.volume);
+            }
         } else if (streq(cmd, "i")) {
             ap_print_header(&ap);
             printf("\n");

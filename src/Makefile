@@ -3,7 +3,7 @@
 SXX_KEY = ~/myir.key
 SXX_ARGS = -i $(SXX_KEY) -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa
 SXX_PORT = 22#2222#
-SXX_HOST = root@192.168.2.2#root@192.168.1.5#root@georgetian.com#
+SXX_HOST = root@192.168.1.5#root@georgetian.com#root@192.168.2.2#
 
 DEBUG_EXE = audioplayer-x64
 XC_EXE = audioplayer-arm
