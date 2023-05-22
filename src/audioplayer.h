@@ -15,6 +15,7 @@
 #define AP_ERROR_CANNOT_OPEN_FILE   2
 #define AP_ERROR_INVALID_WAVE       3
 #define AP_ERROR_STRING             4
+#define AP_ERROR_FILE_NOT_OPEN      5
 
 static char ap_errors[][128] = {
     "OK",
@@ -22,32 +23,31 @@ static char ap_errors[][128] = {
     "Cannot open file",
     "Invalid wave",
     "String error",
+    "File not open",
 };
 
-typedef struct {
-    char* filename;
-    FILE* fp;
-    uint8_t* data;
-    WaveHeader header;
-    double timestamp;
-    double speed;
-    int volume;
-    pthread_t thread;
-    bool repeat;
-    bool playing;
-    bool pause;
-} AudioPlayer;
+
+
+
+struct AudioPlayer;
+typedef struct AudioPlayer AudioPlayer;
 
 // Initialize values in `AudioPlayer` struct
-int ap_init(AudioPlayer* ap);
+AudioPlayer* ap_init();
+// Release AudioPlayer struct init'ed by `ap_open`
+int ap_destroy(AudioPlayer* ap);
+
+int ap_scan_dir(AudioPlayer* ap, const char* dir);
+
+int ap_audio_file_count(AudioPlayer* ap);
+const char** ap_get_audio_files(AudioPlayer* ap);
+
 
 // Reads a file, if it is a well-formed wave file
 // parse its header and save in `ap`
 int ap_open(AudioPlayer* ap, char* filename);
-
 bool ap_is_open(AudioPlayer* ap);
 
-bool ap_is_playing(AudioPlayer* ap);
 
 // Save formatted header in `str`
 // `str` must be at least `AP_HEADER_STRING_LEN` long
@@ -61,17 +61,27 @@ int ap_print_header(AudioPlayer* ap);
 // but with the added extention ".txt"
 int ap_save_header(AudioPlayer* ap, char* filename);
 
-// Release AudioPlayer struct init'ed by `ap_open`
-int ap_close(AudioPlayer* ap);
 
 
-int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking);
-int ap_pause(AudioPlayer* ap);
+
+int ap_play_pause(AudioPlayer* ap);
+bool ap_is_playing(AudioPlayer* ap);
+
+double ap_get_speed(AudioPlayer* ap);
+int ap_set_speed(AudioPlayer* ap, double speed);
 
 
-// volume must be in range [0, 100]
-// otherwise will be rounded to nearest int
-// e.g. -10 -> 0, 104 -> 100
+double ap_duration(AudioPlayer* ap);
+
+double ap_get_timestamp(AudioPlayer* ap);
+// timestamp will be clamped into [0, duration]
+int ap_set_timestamp(AudioPlayer* ap, double timestamp);
+
+// volume will be clamped into [0, 100]
+int ap_get_volume(AudioPlayer* ap);
 int ap_set_volume(AudioPlayer* ap, int volume);
+
+
+
 
 #endif

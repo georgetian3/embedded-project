@@ -1,12 +1,113 @@
 #include "audioplayer.h"
+#include <dirent.h>
+
 #define min(x, y) (x < y) ? x : y
 
 #define error_ret(expr) if (ret = expr) {return ret;}
 
-int ap_init(AudioPlayer* ap) {
-    ap->playing = false;
+struct AudioPlayer {
+    char* dir;
+    char** files;
+    int file_count;
+    char* filename;
+    FILE* fp;
+    uint8_t* data;
+    WaveHeader header;
+    double timestamp;
+    double speed;
+    int volume;
+    pthread_t thread;
+    bool repeat;
+    bool is_playing;
+    bool pause;
+};
+
+
+static int clamp(int val, int low, int high) {
+    return val < low ? low : val > high ? high : val;
+}
+
+
+AudioPlayer* ap_init() {
+    AudioPlayer* ap = malloc(sizeof(AudioPlayer));
+    ap->dir = NULL;
+    ap-> files = NULL;
+    ap->file_count = 0;
+    ap->filename = NULL;
     ap->fp = 0;
+    ap->data = NULL;
+    ap->timestamp = 0;
+    ap->speed = 1;
     ap->volume = 100;
+    ap->thread = 0;
+    ap->repeat = false;
+    ap->is_playing = false;
+    ap->pause = false;
+    return ap;
+}
+
+int ap_destroy(AudioPlayer* ap) {
+    if (ap->filename) {
+        free(ap->filename);
+        ap->filename = NULL;
+    }
+    if (ap->data) {
+        free(ap->data);
+        ap->data = NULL;
+    }
+    if (ap->fp) {
+        fclose(ap->fp);
+    }
+    free(ap);
+    return 0;
+}
+
+
+int ap_scan_dir(AudioPlayer* ap, const char* path) {
+    if (ap->files != NULL) {
+        for (int i = 0; i < ap->file_count; i++) {
+            if (ap->files[i] != NULL) {
+                free(ap->files[i]);
+            }
+        }
+        free(ap->files);
+    }
+    ap->file_count = 0;
+    int file_count = 0;
+    struct dirent* entry;
+    DIR* dir = opendir(path);
+    if (dir == NULL) {
+        g_print("dir == null\n");
+        return 1;
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            file_count++;
+        }
+    }
+    ap->files = malloc(sizeof(char*) * file_count);
+    dir = opendir(path);
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type != DT_REG) {
+            continue;
+        }
+        char cmd[1024];
+        sprintf(cmd, "ffprobe %s 2>&1 | grep \"Stream .*: Audio: \" | wc -l", entry->d_name);
+        FILE* res = popen(cmd, "r");
+        int lines;
+        fscanf(res, "%d", &lines);
+        if (lines > 0) {
+            ap->files[ap->file_count++] = strdup(entry->d_name);
+        }
+    }
+}
+
+int ap_audio_file_count(AudioPlayer* ap) {
+    return ap->file_count;
+}
+
+const char** ap_get_audio_files(AudioPlayer* ap) {
+    return ap->files;
 }
 
 bool ap_is_open(AudioPlayer* ap) {
@@ -14,13 +115,26 @@ bool ap_is_open(AudioPlayer* ap) {
 }
 
 bool ap_is_playing(AudioPlayer* ap) {
-    return ap->playing;
+    return ap->is_playing;
 }
 
 int ap_open(AudioPlayer* ap, char* filename) {
-    ap_close(ap);
+    // TODO: memory leak here
+    //ap_close(ap);
+
+    char cmd[1024];
+    sprintf(cmd, "ffmpeg -y -i \"%s\" -f s16le \"%s.audioplayer.converted.wav\" > /dev/null 2>&1", filename, filename);
+
+    FILE* ffmpeg = popen(cmd, "r");
+    pclose(ffmpeg);
+
+    char converted_filename[1024];
+    sprintf(converted_filename, "%s.audioplayer.converted.wav", filename);
+
+    g_print("Converted filename: %s\n", converted_filename);
+
     ap->filename = strdup(filename);
-    ap->fp = fopen(filename, "rb");
+    ap->fp = fopen(converted_filename, "rb");
     if (!ap->fp) {
         return AP_ERROR_CANNOT_OPEN_FILE;
     }
@@ -114,22 +228,6 @@ int ap_save_header(AudioPlayer* ap, char* filename) {
     return 0;
 }
 
-int ap_close(AudioPlayer* ap) {
-    if (ap->filename) {
-        free(ap->filename);
-        ap->filename = NULL;
-    }
-    if (ap->data) {
-        free(ap->data);
-        ap->data = NULL;
-    }
-    if (ap->fp) {
-        fclose(ap->fp);
-    }
-    ap_init(ap);
-    return 0;
-}
-
 
 int ap_play_(AudioPlayer* ap) {
 
@@ -176,31 +274,54 @@ int ap_play_(AudioPlayer* ap) {
 
     error_ret(snd_pcm_close(pcm))
     ap->pause = false;
-    ap->playing = false;
+    ap->is_playing = false;
 
     return 0;
 }
 
-int ap_play(AudioPlayer* ap, double timestamp, double speed, bool blocking) {
-    if (ap->playing) {
-        return 1;
+int ap_play_pause(AudioPlayer* ap) {
+    if (!ap_is_open(ap)) {
+        return AP_ERROR_FILE_NOT_OPEN;
     }
-    ap->playing = true;
-    return blocking ? ap_play_(ap) : pthread_create(&ap->thread, NULL, (void*)ap_play_, ap);
+    if (ap->is_playing) {
+        ap->pause = true;
+        return 0;
+    } else {
+        ap->is_playing = true;
+        g_print("creating thread and playing\n");
+        return pthread_create(&ap->thread, NULL, (void*)ap_play_, ap);
+    }
 }
 
-int ap_pause(AudioPlayer* ap) {
-    if (!ap->playing) {
-        return 1;
-    }
-    //pthread_cancel(ap->thread);
-    ap->pause = true;
-    //ap->playing = false;
+
+double ap_duration(AudioPlayer* ap) {
+    return 69;
 }
 
+double ap_get_speed(AudioPlayer* ap) {
+    return ap->speed;
+}
+
+int ap_set_speed(AudioPlayer* ap, double speed) {
+
+
+}
+
+double ap_get_timestamp(AudioPlayer* ap) {
+    return ap->timestamp;
+}
+
+int ap_set_timestamp(AudioPlayer* ap, double timestamp) {
+
+
+}
+
+int ap_get_volume(AudioPlayer* ap) {
+    return ap->volume;
+}
 
 int ap_set_volume(AudioPlayer* ap, int volume) {
-    volume = volume < 0 ? 0 : (volume > 100 ? 100 : volume);
+    volume = clamp(volume, 0, 100);
     ap->volume = volume;
 
     snd_mixer_t *handle;

@@ -8,8 +8,9 @@ SXX_HOST = root@59.66.244.24#root@georgetian.com#root@192.168.2.2#root@192.168.1
 DEBUG_EXE = audioplayer-x64
 XC_EXE = audioplayer-arm
 
-HEADERS = waveheader.h audioplayer.h audioplayer_tui.h
-SOURCES = main.c audioplayer.c audioplayer_tui.c
+HEADERS = waveheader.h audioplayer.h audioplayer_gui.h
+SOURCES = main.c audioplayer.c audioplayer_gui.c
+
 LIBS = libasound.so.2 libgthread-2.0.so.0 libgtk-3.so.0 libgdk-3.so.0 libXrandr.so.2 libXcursor.so.1 libXext.so.6 libgmodule-2.0.so.0 libpangocairo-1.0.so.0 libX11.so.6 libXi.so.6 libXcomposite.so.1 libXdamage.so.1 libXfixes.so.3 libcairo-gobject.so.2 libcairo.so.2 libgdk_pixbuf-2.0.so.0 libatk-1.0.so.0 libatk-bridge-2.0.so.0 libxkbcommon.so.0 libwayland-cursor.so.0 libwayland-egl.so.1 libwayland-client.so.0 libepoxy.so.0 libfribidi.so.0 libgio-2.0.so.0 libpangoft2-1.0.so.0 libpango-1.0.so.0 libgobject-2.0.so.0 libglib-2.0.so.0 libharfbuzz.so.0 libfontconfig.so.1 libfreetype.so.6 libz.so.1 libffi.so.7 libXrender.so.1 libxcb.so.1 libpixman-1.so.0 libEGL.so libGLESv2.so libpng16.so.16 libxcb-shm.so.0 libxcb-render.so.0 libdbus-1.so.3 libatspi.so.0 libpcre.so.1 libexpat.so.1 libuuid.so.1 libXau.so.6 libXdmcp.so.6 libGAL.so libdrm.so.2 libgbm.so libgbm_viv.so libwayland-server.so.0 libVSC.so libsystemd.so.0 liblzma.so.5 libcap.so.2
 
 ALSA_LIB_VERSION = 1.2.8

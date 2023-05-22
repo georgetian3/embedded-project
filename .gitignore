@@ -19,3 +19,4 @@ alsa-lib*
 *.m4a
 *.mp4
 lib*
+gtk/
