@@ -18,3 +18,4 @@ alsa-lib*
 *.mp3
 *.m4a
 *.mp4
+lib*
