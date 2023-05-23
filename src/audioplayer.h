@@ -40,14 +40,16 @@ int ap_destroy(AudioPlayer* ap);
 int ap_scan_dir(AudioPlayer* ap, const char* dir);
 
 int ap_audio_file_count(AudioPlayer* ap);
-const char** ap_get_audio_files(AudioPlayer* ap);
+const char** ap_get_audio_filenames(AudioPlayer* ap);
 
 
 // Reads a file, if it is a well-formed wave file
 // parse its header and save in `ap`
-int ap_open(AudioPlayer* ap, char* filename);
+int ap_open(AudioPlayer* ap, const char* filename);
+int ap_close(AudioPlayer* ap);
 bool ap_is_open(AudioPlayer* ap);
 
+bool ap_file_contains_audio(const char* filename);
 
 // Save formatted header in `str`
 // `str` must be at least `AP_HEADER_STRING_LEN` long
@@ -61,7 +63,8 @@ int ap_print_header(AudioPlayer* ap);
 // but with the added extention ".txt"
 int ap_save_header(AudioPlayer* ap, char* filename);
 
-
+bool ap_get_repeat(AudioPlayer* ap);
+int ap_set_repeat(AudioPlayer* ap, bool repeat);
 
 
 int ap_play_pause(AudioPlayer* ap);

@@ -1,18 +1,22 @@
 #include "audioplayer.h"
 #include <dirent.h>
+#include <gtk/gtk.h>
 
 #define min(x, y) (x < y) ? x : y
 
 #define error_ret(expr) if (ret = expr) {return ret;}
+#define MAX_CMD_LEN 1024
 
 struct AudioPlayer {
-    char* dir;
-    char** files;
-    int file_count;
-    char* filename;
+    char dir[MAX_CMD_LEN];
+    char** audio_filenames;
+    int audio_file_count;
+    char open_filename[MAX_CMD_LEN];
+    char converted_filename[MAX_CMD_LEN];
     FILE* fp;
     uint8_t* data;
     WaveHeader header;
+    double duration;
     double timestamp;
     double speed;
     int volume;
@@ -22,18 +26,14 @@ struct AudioPlayer {
     bool pause;
 };
 
-
-static int clamp(int val, int low, int high) {
-    return val < low ? low : val > high ? high : val;
-}
-
+#define clamp(val, low, high) val < low ? low : val > high ? high : val
 
 AudioPlayer* ap_init() {
     AudioPlayer* ap = malloc(sizeof(AudioPlayer));
-    ap->dir = NULL;
-    ap-> files = NULL;
-    ap->file_count = 0;
-    ap->filename = NULL;
+    strcpy(ap->dir, "");
+    ap->audio_filenames = NULL;
+    ap->audio_file_count = 0;
+    strcpy(ap->open_filename, "");
     ap->fp = 0;
     ap->data = NULL;
     ap->timestamp = 0;
@@ -45,69 +45,57 @@ AudioPlayer* ap_init() {
     ap->pause = false;
     return ap;
 }
-
 int ap_destroy(AudioPlayer* ap) {
-    if (ap->filename) {
-        free(ap->filename);
-        ap->filename = NULL;
-    }
-    if (ap->data) {
-        free(ap->data);
-        ap->data = NULL;
-    }
-    if (ap->fp) {
-        fclose(ap->fp);
+    ap_close(ap);
+    if (ap->audio_filenames) {
+        for (int i = 0; i < ap->audio_file_count; i++) {
+            free(ap->audio_filenames[i]);
+        }
+        free(ap->audio_filenames);
     }
     free(ap);
     return 0;
 }
 
+bool ap_file_contains_audio(const char* filename) {
+    char cmd[MAX_CMD_LEN];
+    sprintf(cmd, "ffprobe %s 2>&1 | grep \"Stream .*: Audio: \" | wc -l", filename);
+    FILE* res = popen(cmd, "r");
+    int lines;
+    fscanf(res, "%d", &lines);
+    pclose(res);
+    return lines > 0;
+}
 
 int ap_scan_dir(AudioPlayer* ap, const char* path) {
-    if (ap->files != NULL) {
-        for (int i = 0; i < ap->file_count; i++) {
-            if (ap->files[i] != NULL) {
-                free(ap->files[i]);
-            }
-        }
-        free(ap->files);
-    }
-    ap->file_count = 0;
-    int file_count = 0;
-    struct dirent* entry;
+    ap->audio_file_count = 0;
     DIR* dir = opendir(path);
     if (dir == NULL) {
-        g_print("dir == null\n");
         return 1;
     }
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) {
-            file_count++;
+    ap->audio_filenames = malloc(sizeof(char*) * MAX_CMD_LEN);
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL && ap->audio_file_count < MAX_CMD_LEN) {
+        if (entry->d_type == DT_REG && entry->d_name[0] != '.' && ap_file_contains_audio(entry->d_name)) {
+            ap->audio_filenames[ap->audio_file_count++] = strdup(entry->d_name);
         }
     }
-    ap->files = malloc(sizeof(char*) * file_count);
-    dir = opendir(path);
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type != DT_REG) {
-            continue;
-        }
-        char cmd[1024];
-        sprintf(cmd, "ffprobe %s 2>&1 | grep \"Stream .*: Audio: \" | wc -l", entry->d_name);
-        FILE* res = popen(cmd, "r");
-        int lines;
-        fscanf(res, "%d", &lines);
-        if (lines > 0) {
-            ap->files[ap->file_count++] = strdup(entry->d_name);
-        }
-    }
+    return 0;
 }
 
 int ap_audio_file_count(AudioPlayer* ap) {
-    return ap->file_count;
+    return ap->audio_file_count;
 }
 
-const char** ap_get_audio_files(AudioPlayer* ap) {
-    return ap->files;
+const char** ap_get_audio_filenames(AudioPlayer* ap) {
+    return (const char**)ap->audio_filenames;
+}
+
+bool ap_get_repeat(AudioPlayer* ap) {
+    return ap->repeat;
+}
+int ap_set_repeat(AudioPlayer* ap, bool repeat) {
+    ap->repeat = repeat;
 }
 
 bool ap_is_open(AudioPlayer* ap) {
@@ -118,23 +106,41 @@ bool ap_is_playing(AudioPlayer* ap) {
     return ap->is_playing;
 }
 
-int ap_open(AudioPlayer* ap, char* filename) {
-    // TODO: memory leak here
-    //ap_close(ap);
+int ap_close(AudioPlayer* ap) {
+    remove(ap->converted_filename);
+    strcpy(ap->open_filename, "");
+    strcpy(ap->converted_filename, "");
+    if (ap->data) {
+        free(ap->data);
+        ap->data = NULL;
+    }
+    if (ap->fp) {
+        fclose(ap->fp);
+        ap->fp = 0;
+    }
+    return 0;
+}
+int ap_open(AudioPlayer* ap, const char* filename) {
 
-    char cmd[1024];
-    sprintf(cmd, "ffmpeg -y -i \"%s\" -f s16le \"%s.audioplayer.converted.wav\" > /dev/null 2>&1", filename, filename);
+    // don't open if already open
+    if (strcmp(filename, ap->open_filename) == 0) {
+        return 0;
+    }
 
-    FILE* ffmpeg = popen(cmd, "r");
-    pclose(ffmpeg);
+    ap_close(ap);
 
-    char converted_filename[1024];
-    sprintf(converted_filename, "%s.audioplayer.converted.wav", filename);
+    strncpy(ap->open_filename, filename, MAX_CMD_LEN);
+    sprintf(ap->converted_filename, "%s.audioplayer.converted.wav", filename);
+    g_print("Converted filename: %s\n", ap->converted_filename);
 
-    g_print("Converted filename: %s\n", converted_filename);
+    char cmd[MAX_CMD_LEN];
+    sprintf(cmd, "ffmpeg -y -i \"%s\" -fflags +bitexact -flags:v +bitexact -flags:a +bitexact \"%s\" > /dev/null 2>&1", filename, ap->converted_filename);
+    pclose(popen(cmd, "r"));
 
-    ap->filename = strdup(filename);
-    ap->fp = fopen(converted_filename, "rb");
+    ap->fp = fopen(ap->converted_filename, "rb");
+    char header_info[1024];
+    ap_get_header_string(ap, header_info);
+    g_print("%s\n", header_info);
     if (!ap->fp) {
         return AP_ERROR_CANNOT_OPEN_FILE;
     }
@@ -162,6 +168,8 @@ int ap_open(AudioPlayer* ap, char* filename) {
         // IDs/formats do not match
         return AP_ERROR_INVALID_WAVE;
     }
+
+    ap->duration = 1.0 * ap->header.data_size / ap->header.byte_rate;
 
     return 0;
 }
@@ -196,7 +204,6 @@ int ap_get_header_string(AudioPlayer* ap, char* str) {
     }
     return 0;
 }
-
 int ap_print_header(AudioPlayer* ap) {
     char header_string[AP_HEADER_STRING_LEN];
     int err = ap_get_header_string(ap, header_string);
@@ -206,12 +213,11 @@ int ap_print_header(AudioPlayer* ap) {
     printf("%s\n", header_string);
     return 0;
 }
-
 int ap_save_header(AudioPlayer* ap, char* filename) {
     if (filename == NULL) {
-        size_t wave_filename_length = strlen(ap->filename);
+        size_t wave_filename_length = strlen(ap->open_filename);
         filename = malloc(wave_filename_length + 5);
-        strcpy(filename, ap->filename);
+        strcpy(filename, ap->open_filename);
         strcpy((char*)(filename + wave_filename_length), ".txt\0");
     }
     FILE* fp = fopen(filename, "wb");
@@ -295,7 +301,10 @@ int ap_play_pause(AudioPlayer* ap) {
 
 
 double ap_duration(AudioPlayer* ap) {
-    return 69;
+    if (!ap_is_open(ap)) {
+        return -1;
+    }
+    return ap->duration;
 }
 
 double ap_get_speed(AudioPlayer* ap) {
@@ -303,17 +312,21 @@ double ap_get_speed(AudioPlayer* ap) {
 }
 
 int ap_set_speed(AudioPlayer* ap, double speed) {
-
-
+    ap->speed = speed;
 }
 
 double ap_get_timestamp(AudioPlayer* ap) {
+    if (!ap_is_open(ap)) {
+        return -1;
+    }
     return ap->timestamp;
 }
 
 int ap_set_timestamp(AudioPlayer* ap, double timestamp) {
-
-
+    if (!ap_is_open(ap)) {
+        return -1;
+    }
+    ap->timestamp = clamp(timestamp, 0, ap->duration);
 }
 
 int ap_get_volume(AudioPlayer* ap) {
