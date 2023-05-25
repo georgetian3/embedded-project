@@ -19,8 +19,6 @@ typedef struct {
     int hours;
 } Duration;
 
-#define error_print(expr) int __ret; if (__ret = expr) {g_print("%s\n", ap_errors[__ret]);}
-
 static Duration seconds_to_duration(int seconds) {
     Duration duration;
     duration.seconds = seconds % 60;
@@ -37,12 +35,8 @@ static void gtk_button_set_icon(GtkWidget* button, const gchar *icon_name, GtkIc
 }
 
 static void set_play_pause_icon() {
-    g_print("set_play_pause_icon\n");
-    if (ap_is_playing(ap)) {
-        gtk_button_set_icon(play_pause_button, "media-playback-pause", GTK_ICON_SIZE_BUTTON);
-    } else {
-        gtk_button_set_icon(play_pause_button, "media-playback-start", GTK_ICON_SIZE_BUTTON);
-    }
+    bool is_playing = ap_is_playing(ap);
+    gtk_button_set_icon(play_pause_button, is_playing ? "media-playback-pause" : "media-playback-start", GTK_ICON_SIZE_BUTTON);
 }
 
 static void set_info(const char* text) {
@@ -106,11 +100,11 @@ static void repeat_clicked(GtkWidget* widget, gpointer data) {
 
 static void play_pause_clicked(GtkWidget* widget, gpointer data) {
     if (ap_is_playing(ap)) {
-        g_print("Pausing");
+        g_print("Pausing\n");
         ap_pause(ap);
         g_print("Pause complete\n");
     } else {
-        g_print("Playing");
+        g_print("Playing\n");
         ap_play(ap);
     }
     set_play_pause_icon();
@@ -173,6 +167,7 @@ static void slider_released(GtkWidget* widget, gpointer data) {
 static gboolean timeout(gpointer data) {
     set_timestamp_text(NULL, NULL);
     set_slider(ap_get_timestamp(ap));
+    set_play_pause_icon();
     return G_SOURCE_CONTINUE;
 }
 
@@ -259,7 +254,7 @@ static void activate(GtkApplication* app, gpointer data) {
     g_signal_connect(volume_adjustment, "value-changed", G_CALLBACK(volume_changed), NULL);
 
 
-    g_timeout_add(100, timeout, NULL);
+    g_timeout_add(10, timeout, NULL);
 
     gtk_widget_show_all(window);
 
@@ -269,7 +264,7 @@ static void activate(GtkApplication* app, gpointer data) {
 
 int audioplayer_gui(int argc, char **argv) {
     ap = ap_init();
-    ap_set_callback(ap, set_play_pause_icon);
+    //ap_set_callback(ap, set_play_pause_icon);
 
     GtkApplication* app = gtk_application_new("com.georgetian.audioplayer", G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
