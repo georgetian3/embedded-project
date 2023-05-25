@@ -3,6 +3,7 @@
 
 #include "waveheader.h"
 
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -66,8 +67,9 @@ int ap_save_header(AudioPlayer* ap, char* filename);
 bool ap_get_repeat(AudioPlayer* ap);
 int ap_set_repeat(AudioPlayer* ap, bool repeat);
 
-
-int ap_play_pause(AudioPlayer* ap);
+int ap_set_callback(AudioPlayer* ap, void (*callback)());
+int ap_play(AudioPlayer* ap);
+int ap_pause(AudioPlayer* ap);
 bool ap_is_playing(AudioPlayer* ap);
 
 double ap_get_speed(AudioPlayer* ap);
@@ -80,8 +82,8 @@ double ap_get_timestamp(AudioPlayer* ap);
 // timestamp will be clamped into [0, duration]
 int ap_set_timestamp(AudioPlayer* ap, double timestamp);
 
-// volume will be clamped into [0, 100]
 int ap_get_volume(AudioPlayer* ap);
+// volume will be clamped into [0, 100]
 int ap_set_volume(AudioPlayer* ap, int volume);
 
 

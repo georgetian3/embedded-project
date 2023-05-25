@@ -5,12 +5,14 @@ static AudioPlayer* ap;
 static GtkWidget* playlist;
 static GtkAdjustment* slider_adjustment;
 static GtkAdjustment* volume_adjustment;
+static GtkWidget* play_pause_button;
 static GtkWidget* timestamp_label;
 static GtkWidget* info_label;
+static GtkWidget* speed_button;
 static bool stop_moving_slider;
 static bool waiting_for_scan;
 static bool scan_complete;
-
+static int file_index;
 typedef struct {
     int seconds;
     int minutes;
@@ -34,25 +36,62 @@ static void gtk_button_set_icon(GtkWidget* button, const gchar *icon_name, GtkIc
     gtk_button_set_image((GtkButton*)button, image);
 }
 
+static void set_play_pause_icon() {
+    g_print("set_play_pause_icon\n");
+    if (ap_is_playing(ap)) {
+        gtk_button_set_icon(play_pause_button, "media-playback-pause", GTK_ICON_SIZE_BUTTON);
+    } else {
+        gtk_button_set_icon(play_pause_button, "media-playback-start", GTK_ICON_SIZE_BUTTON);
+    }
+}
+
 static void set_info(const char* text) {
     gtk_label_set_text((GtkLabel*)info_label, text);
 }
 
+static void set_slider(double value) {
+    if (stop_moving_slider) {
+        return;
+    }
+    gtk_adjustment_set_value(slider_adjustment, value);
+}
+
 static void file_clicked(GtkWidget* widget, gpointer data) {
-    int ret = ap_open(ap, ap_get_audio_filenames(ap)[(int)data]);
+    file_index = (int)data;
+    if (file_index < 0 || file_index >= ap_audio_file_count(ap)) {
+        set_info("Invalid audio file\n");
+        g_print("Invalid file index: %d\n", file_index);
+        return;
+    }
+    const char* filename = ap_get_audio_filenames(ap)[file_index];
+    g_print("Opening: %s\n", filename);
+    int ret = ap_open(ap, filename);
     if (ret) {
         set_info(ap_errors[ret]);
     } else {
         char info[1024];
         sprintf(info, "File opened successfully: %s", ap_get_audio_filenames(ap)[(int)data]);
         set_info(info);
+        gtk_adjustment_set_upper(slider_adjustment, ap_duration(ap));
     }
+    set_play_pause_icon();
 }
 
 static void skip_backward_clicked(GtkWidget* widget, gpointer data) {
     g_print("skip_backward_clicked\n");
+    int count = ap_audio_file_count(ap);
+    if (file_index == -1) {
+        file_index = count - 1;
+    } else {
+        file_index = (file_index + count - 1) % count;
+    }
+    file_clicked(NULL, (void*)file_index);
+
 }
 static void skip_forward_clicked(GtkWidget* widget, gpointer data) {
+    int count = ap_audio_file_count(ap);
+    file_index = (file_index + 1) % count;
+    file_clicked(NULL, (void*)file_index);
 }
 static void seek_backward_clicked(GtkWidget* widget, gpointer data) {
     ap_set_timestamp(ap, ap_get_timestamp(ap) - 10);
@@ -66,20 +105,39 @@ static void repeat_clicked(GtkWidget* widget, gpointer data) {
 }
 
 static void play_pause_clicked(GtkWidget* widget, gpointer data) {
-    g_print("Play/pause clicked\n");
-    error_print(ap_play_pause(ap));
-    g_print("is_playing: %d\n", ap_is_playing(ap));
-    gtk_button_set_icon(widget, ap_is_playing(ap) ? "media-playback-pause" : "media-playback-start", GTK_ICON_SIZE_BUTTON);
-}
-
-
-
-static void set_slider(double value) {
-    if (stop_moving_slider) {
-        return;
+    if (ap_is_playing(ap)) {
+        g_print("Pausing");
+        ap_pause(ap);
+        g_print("Pause complete\n");
+    } else {
+        g_print("Playing");
+        ap_play(ap);
     }
-    gtk_adjustment_set_value(slider_adjustment, value);
+    set_play_pause_icon();
 }
+
+static void speed_clicked(GtkWidget* widget, gpointer data) {
+    double speed = ap_get_speed(ap);
+    double new_speed;
+    if (speed == 1.0) {
+        new_speed = 1.5;
+    } else if (speed == 1.5) {
+        new_speed = 2.0;
+    } else if (speed == 2.0) {
+        new_speed = 0.5;
+    } else {
+        new_speed = 1.0;
+    }
+    ap_set_speed(ap, new_speed);
+
+    char speed_label[] = "1.0x";
+    sprintf(speed_label, "%.1fx", new_speed);
+    gtk_button_set_label((GtkButton*)speed_button, speed_label);
+}
+
+
+
+
 static void volume_changed(GtkWidget* widget, gpointer data) {
     ap_set_volume(ap, gtk_adjustment_get_value(volume_adjustment));
 }
@@ -112,14 +170,14 @@ static void slider_released(GtkWidget* widget, gpointer data) {
     stop_moving_slider = false;
 }
 
-static gboolean second_timeout(gpointer data) {
+static gboolean timeout(gpointer data) {
     set_timestamp_text(NULL, NULL);
     set_slider(ap_get_timestamp(ap));
     return G_SOURCE_CONTINUE;
 }
 
 static void activate(GtkApplication* app, gpointer data) {
-
+    file_index = -1;
 
     GtkWidget* window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Audio Player");
@@ -166,9 +224,13 @@ static void activate(GtkApplication* app, gpointer data) {
     gtk_widget_set_halign(controls, GTK_ALIGN_CENTER);
     gtk_container_add(GTK_CONTAINER(vbox), controls);
 
-    GtkWidget* repeat = gtk_button_new_from_icon_name("media-playlist-repeat", GTK_ICON_SIZE_BUTTON);
-    gtk_container_add(GTK_CONTAINER(controls), repeat);
-    g_signal_connect(repeat, "clicked", G_CALLBACK(repeat_clicked), NULL);
+    // GtkWidget* repeat = gtk_button_new_from_icon_name("media-playlist-repeat", GTK_ICON_SIZE_BUTTON);
+    // gtk_container_add(GTK_CONTAINER(controls), repeat);
+    // g_signal_connect(repeat, "clicked", G_CALLBACK(repeat_clicked), NULL);
+
+    speed_button = gtk_button_new_with_label("1.0x");
+    gtk_container_add(GTK_CONTAINER(controls), speed_button);
+    g_signal_connect(speed_button, "clicked", G_CALLBACK(speed_clicked), NULL);
 
     GtkWidget* skip_backward = gtk_button_new_from_icon_name("media-skip-backward", GTK_ICON_SIZE_BUTTON);
     gtk_container_add(GTK_CONTAINER(controls), skip_backward);
@@ -178,9 +240,9 @@ static void activate(GtkApplication* app, gpointer data) {
     gtk_container_add(GTK_CONTAINER(controls), seek_backward);
     g_signal_connect(seek_backward, "clicked", G_CALLBACK(seek_backward_clicked), NULL);
 
-    GtkWidget* play_pause = gtk_button_new_from_icon_name("media-playback-start", GTK_ICON_SIZE_BUTTON);
-    gtk_container_add(GTK_CONTAINER(controls), play_pause);
-    g_signal_connect(play_pause, "clicked", G_CALLBACK(play_pause_clicked), NULL);
+    play_pause_button = gtk_button_new_from_icon_name("media-playback-start", GTK_ICON_SIZE_BUTTON);
+    gtk_container_add(GTK_CONTAINER(controls), play_pause_button);
+    g_signal_connect(play_pause_button, "clicked", G_CALLBACK(play_pause_clicked), NULL);
 
     GtkWidget* seek_forward = gtk_button_new_from_icon_name("media-seek-forward", GTK_ICON_SIZE_BUTTON);
     gtk_container_add(GTK_CONTAINER(controls), seek_forward);
@@ -197,7 +259,7 @@ static void activate(GtkApplication* app, gpointer data) {
     g_signal_connect(volume_adjustment, "value-changed", G_CALLBACK(volume_changed), NULL);
 
 
-    g_timeout_add_seconds(1, second_timeout, NULL);
+    g_timeout_add(100, timeout, NULL);
 
     gtk_widget_show_all(window);
 
@@ -207,6 +269,7 @@ static void activate(GtkApplication* app, gpointer data) {
 
 int audioplayer_gui(int argc, char **argv) {
     ap = ap_init();
+    ap_set_callback(ap, set_play_pause_icon);
 
     GtkApplication* app = gtk_application_new("com.georgetian.audioplayer", G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);

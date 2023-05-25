@@ -10,5 +10,12 @@ int main(int argc, char** argv) {
         printf("Error: %s\n", ap_errors[ret]);
         return 1;
     }
-    //ap_play_pause(ap);
+    //ap_set_speed(ap, 1.5);
+    ap_set_timestamp(ap, 5);
+    ap_set_volume(ap, 50);
+    ap_play(ap);
+    char c;
+    scanf("%c", &c);
+    ap_pause(ap);
+    scanf("%c", &c);
 }
