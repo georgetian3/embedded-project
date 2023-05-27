@@ -8,7 +8,7 @@
 
 #define error_ret(expr) if (ret = expr) {return ret;}
 #define MAX_CMD_LEN 1024
-#define AP_FRAMES_PER_CHUNK 256
+#define AP_FRAMES_PER_CHUNK 300
 
 #define AP_CONVERTED_FILE ".audioplayer.converted.wav"
 
@@ -210,31 +210,36 @@ int ap_open(AudioPlayer* ap, const char* filename) {
         return AP_ERROR_INVALID_WAVE;
     }
 
-
     ap->duration = 1.0 * ap->header.data_size / ap->header.byte_rate;
 
-    int upper_frequency = 200, lower_frequency = 100;
-    int min_period = ap->header.sample_rate / upper_frequency;
-    int max_period = ap->header.sample_rate / lower_frequency;
+    // int upper_frequency = 200, lower_frequency = 100;
+    // int min_period = ap->header.sample_rate / upper_frequency;
+    // int max_period = ap->header.sample_rate / lower_frequency;
 
-    int total_samples = ap->header.data_size / (ap->header.channels * ap->header.bit_depth / 8);
-    StretchHandle stretcher = stretch_init(min_period, max_period, ap->header.channels, STRETCH_FAST_FLAG);
-    int max_expected_samples = stretch_output_capacity(stretcher, total_samples, 2);
+    // int total_samples = ap->header.data_size / (ap->header.channels * ap->header.bit_depth / 8);
+    // StretchHandle stretcher = stretch_init(min_period, max_period, ap->header.channels, STRETCH_FAST_FLAG);
+    // int max_expected_samples = stretch_output_capacity(stretcher, total_samples, 2);
 
     double speeds[] = {0.5, 1.5, 2.0};
 
     for (int i = 0; i < 3; i++) {
-        ap->speed_buffers[i] = malloc(max_expected_samples * ap->header.channels * ap->header.bit_depth / 8);
-        stretch_samples(
-            stretcher,
-            (const int16_t*)ap->data,
-            total_samples,
-            ap->speed_buffers[i], 1 / speeds[i]
-        );
+        // ap->speed_buffers[i] = malloc(max_expected_samples * ap->header.channels * ap->header.bit_depth / 8);
+        // stretch_samples(
+        //     stretcher,
+        //     (const int16_t*)ap->data,
+        //     total_samples,
+        //     ap->speed_buffers[i], 1 / speeds[i]
+        // );
+        ap->speed_buffers[i] = malloc(ap->header.data_size / speeds[i]);
+        sprintf(cmd, "ffmpeg -y -v quiet -i \"%s\" -af atempo=%.1f -f s16le pipe:1", filename, speeds[i]);
+        FILE* fp = popen(cmd, "r");
+        int bytes_read = fread(ap->speed_buffers[i], 1, ap->header.data_size / speeds[i], fp);
+        pclose(fp);
     }
 
-    stretch_deinit(stretcher);
+    //stretch_deinit(stretcher);
     ap->is_open = true;
+
     return 0;
 }
 
