@@ -9,10 +9,10 @@ static GtkWidget* play_pause_button;
 static GtkWidget* timestamp_label;
 static GtkWidget* info_label;
 static GtkWidget* speed_button;
-static bool stop_moving_slider;
-static bool waiting_for_scan;
-static bool scan_complete;
 static int file_index;
+static pthread_t open_file_thread;
+static int open_file_status;
+static int file_open_ret;
 typedef struct {
     int seconds;
     int minutes;
@@ -44,13 +44,36 @@ static void set_info(const char* text) {
 }
 
 static void set_slider(double value) {
-    if (stop_moving_slider) {
-        return;
-    }
     gtk_adjustment_set_value(slider_adjustment, value);
 }
 
+static void open_file(const char* filename) {
+    open_file_status = 1;
+    file_open_ret = ap_open(ap, filename);
+    open_file_status = 2;
+}
+
+static void after_open_file() {
+    if (open_file_status != 2) {
+        return;
+    }
+    pthread_join(open_file_thread, NULL);
+    open_file_status = 0;
+    char info[1024];
+    if (file_open_ret) {
+        sprintf(info, "File open error: %s", ap_errors[file_open_ret]);
+    } else {
+        sprintf(info, "File opened successfully: %s", ap_get_audio_filenames(ap)[file_index]);
+        gtk_adjustment_set_upper(slider_adjustment, ap_duration(ap));
+    }
+    set_info(info);
+    set_play_pause_icon();
+}
+
 static void file_clicked(GtkWidget* widget, gpointer data) {
+    if (open_file_status != 0) {
+        return;
+    }
     file_index = (int)data;
     if (file_index < 0 || file_index >= ap_audio_file_count(ap)) {
         set_info("Invalid audio file\n");
@@ -58,34 +81,23 @@ static void file_clicked(GtkWidget* widget, gpointer data) {
         return;
     }
     const char* filename = ap_get_audio_filenames(ap)[file_index];
-    g_print("Opening: %s\n", filename);
-    int ret = ap_open(ap, filename);
-    if (ret) {
-        set_info(ap_errors[ret]);
-    } else {
-        char info[1024];
-        sprintf(info, "File opened successfully: %s", ap_get_audio_filenames(ap)[(int)data]);
-        set_info(info);
-        gtk_adjustment_set_upper(slider_adjustment, ap_duration(ap));
-    }
-    set_play_pause_icon();
+    char info[1024];
+    sprintf(info, "Opening file: %s", filename);
+    set_info(info);
+    pthread_create(&open_file_thread, NULL, (void*)open_file, (void*)filename);
 }
 
 static void skip_backward_clicked(GtkWidget* widget, gpointer data) {
-    g_print("skip_backward_clicked\n");
     int count = ap_audio_file_count(ap);
     if (file_index == -1) {
-        file_index = count - 1;
+        file_clicked(NULL, (void*)(count - 1));
     } else {
-        file_index = (file_index + count - 1) % count;
+        file_clicked(NULL, (void*)((file_index + count - 1) % count));
     }
-    file_clicked(NULL, (void*)file_index);
-
 }
 static void skip_forward_clicked(GtkWidget* widget, gpointer data) {
     int count = ap_audio_file_count(ap);
-    file_index = (file_index + 1) % count;
-    file_clicked(NULL, (void*)file_index);
+    file_clicked(NULL, (void*)((file_index + 1) % count));
 }
 static void seek_backward_clicked(GtkWidget* widget, gpointer data) {
     ap_set_timestamp(ap, ap_get_timestamp(ap) - 10);
@@ -100,11 +112,8 @@ static void repeat_clicked(GtkWidget* widget, gpointer data) {
 
 static void play_pause_clicked(GtkWidget* widget, gpointer data) {
     if (ap_is_playing(ap)) {
-        g_print("Pausing\n");
         ap_pause(ap);
-        g_print("Pause complete\n");
     } else {
-        g_print("Playing\n");
         ap_play(ap);
     }
     set_play_pause_icon();
@@ -150,29 +159,31 @@ static void set_timestamp_text(GtkWidget* widget, gpointer data) {
     gtk_label_set_text((GtkLabel*)timestamp_label, timestamp_buffer);
 }
 
-static void slider_pressed(GtkWidget* widget, gpointer data) {
-    g_print("Slider pressed\n");
-    stop_moving_slider = true;
-    //set_timestamp_text(NULL, NULL);
-}
+// static void slider_pressed(GtkWidget* widget, gpointer data) {
+//     g_print("Slider pressed\n");
+//     // stop_moving_slider = true;
+//     //set_timestamp_text(NULL, NULL);
+// }
 
-static void slider_released(GtkWidget* widget, gpointer data) {
-    double slider_value = (double)gtk_adjustment_get_value(slider_adjustment);
-    g_print("Slider released: %f\n", slider_value);
-    //ap_set_timestamp(ap, slider_value);
-    //set_timestamp_text(NULL, NULL);
-    stop_moving_slider = false;
-}
+// static void slider_released(GtkWidget* widget, gpointer data) {
+//     double slider_value = (double)gtk_adjustment_get_value(slider_adjustment);
+//     g_print("Slider released: %f\n", slider_value);
+//     //ap_set_timestamp(ap, slider_value);
+//     //set_timestamp_text(NULL, NULL);
+//     // stop_moving_slider = false;
+// }
 
 static gboolean timeout(gpointer data) {
     set_timestamp_text(NULL, NULL);
     set_slider(ap_get_timestamp(ap));
     set_play_pause_icon();
+    after_open_file();
     return G_SOURCE_CONTINUE;
 }
 
 static void activate(GtkApplication* app, gpointer data) {
     file_index = -1;
+    open_file_status = 0;
 
     GtkWidget* window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Audio Player");
@@ -209,8 +220,8 @@ static void activate(GtkApplication* app, gpointer data) {
     gtk_container_add(GTK_CONTAINER(slider_box), slider);
     gtk_scale_set_draw_value((GtkScale*)slider, FALSE);
     gtk_widget_set_hexpand(slider, TRUE);
-    g_signal_connect(slider, "button-press-event", G_CALLBACK(slider_pressed), NULL);
-    g_signal_connect(slider, "button-release-event", G_CALLBACK(slider_released), NULL);
+    // g_signal_connect(slider, "button-press-event", G_CALLBACK(slider_pressed), NULL);
+    // g_signal_connect(slider, "button-release-event", G_CALLBACK(slider_released), NULL);
 
     timestamp_label = gtk_label_new("00:00:00/00:00:00");
     gtk_container_add(GTK_CONTAINER(slider_box), timestamp_label);
@@ -271,6 +282,7 @@ int audioplayer_gui(int argc, char **argv) {
     int status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
 
+    ap_pause(ap);
     ap_destroy(ap);
 
     return status;

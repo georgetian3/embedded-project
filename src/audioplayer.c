@@ -1,5 +1,6 @@
 #include "audioplayer.h"
 #include "stretch.h"
+#include <math.h>
 #include <dirent.h>
 #include <gtk/gtk.h>
 
@@ -9,12 +10,12 @@
 #define MAX_CMD_LEN 1024
 #define AP_FRAMES_PER_CHUNK 256
 
+#define AP_CONVERTED_FILE ".audioplayer.converted.wav"
+
 struct AudioPlayer {
-    char dir[MAX_CMD_LEN];
     char** audio_filenames;
     int audio_file_count;
-    char open_filename[MAX_CMD_LEN];
-    char converted_filename[MAX_CMD_LEN];
+    char* open_filename;
     FILE* fp;
     uint8_t* data;
     WaveHeader header;
@@ -29,17 +30,17 @@ struct AudioPlayer {
     bool repeat;
     bool is_playing;
     bool pause;
-    int16_t speed_buffers[3][1024 * 1024 * 16];
+    bool is_open;
+    int16_t* speed_buffers[3];
 };
 
 #define clamp(val, low, high) val < low ? low : val > high ? high : val
 
 AudioPlayer* ap_init() {
     AudioPlayer* ap = malloc(sizeof(AudioPlayer));
-    strcpy(ap->dir, "");
     ap->audio_filenames = NULL;
     ap->audio_file_count = 0;
-    strcpy(ap->open_filename, "");
+    ap->open_filename = NULL;
     ap->fp = 0;
     ap->data = NULL;
     ap->timestamp = 0;
@@ -52,6 +53,10 @@ AudioPlayer* ap_init() {
     ap->is_playing = false;
     ap->pause = false;
 
+    for (int i = 0; i < 3; i++) {
+        ap->speed_buffers[i] = NULL;
+    }
+
     if (pthread_mutex_init(&ap->byte_lock, NULL)) {
         printf("\n mutex init has failed\n");
         exit(1);
@@ -59,6 +64,42 @@ AudioPlayer* ap_init() {
 
     return ap;
 }
+
+int ap_close(AudioPlayer* ap) {
+    ap->is_open = false;
+    ap->at_byte = 0;
+    ap_pause(ap);
+    if (ap->thread) {
+        pthread_join(ap->thread, NULL);
+        ap->thread = 0;
+    }
+    if (ap->open_filename) {
+        free(ap->open_filename);
+        ap->open_filename = NULL;
+    }
+    remove(AP_CONVERTED_FILE);
+    if (ap->data) {
+        free(ap->data);
+        ap->data = NULL;
+    }
+    for (int i = 0; i < 3; i++) {
+        if (ap->speed_buffers[i]) {
+            free(ap->speed_buffers[i]);
+            ap->speed_buffers[i] = NULL;
+        }
+    }
+    if (ap->fp) {
+        fclose(ap->fp);
+        ap->fp = 0;
+    }
+    return 0;
+}
+
+int to_even(int n) {
+    return n + (n % 2);
+}
+
+
 int ap_destroy(AudioPlayer* ap) {
     ap_close(ap);
     if (ap->audio_filenames) {
@@ -113,68 +154,49 @@ int ap_set_repeat(AudioPlayer* ap, bool repeat) {
 }
 
 bool ap_is_open(AudioPlayer* ap) {
-    return !!ap->fp;
+    return ap->is_open;
 }
 
 bool ap_is_playing(AudioPlayer* ap) {
     return ap->is_playing;
 }
 
-int ap_close(AudioPlayer* ap) {
-    ap->at_byte = 0;
-    if (ap->is_playing) {
-        ap_pause(ap);
-    }
-    if (ap->thread) {
-        pthread_join(ap->thread, NULL);
-        ap->thread = 0;
-    }
-    remove(ap->converted_filename);
-    strcpy(ap->open_filename, "");
-    strcpy(ap->converted_filename, "");
-    if (ap->data) {
-        free(ap->data);
-        ap->data = NULL;
-    }
-    if (ap->fp) {
-        fclose(ap->fp);
-        ap->fp = 0;
-    }
-    return 0;
-}
 int ap_open(AudioPlayer* ap, const char* filename) {
 
     // don't open if already open
-    if (strcmp(filename, ap->open_filename) == 0) {
+    if (ap->open_filename && strcmp(filename, ap->open_filename) == 0) {
         return 0;
     }
 
     ap_close(ap);
 
-    strncpy(ap->open_filename, filename, MAX_CMD_LEN);
-    sprintf(ap->converted_filename, ".%s.audioplayer.converted.wav", filename);
-    g_print("Converted filename: %s\n", ap->converted_filename);
+    ap->open_filename = strdup(filename);
 
     char cmd[MAX_CMD_LEN];
-    sprintf(cmd, "ffmpeg -y -i \"%s\" -fflags +bitexact -flags:v +bitexact -flags:a +bitexact \"%s\" > /dev/null 2>&1", filename, ap->converted_filename);
-    pclose(popen(cmd, "r"));
+    sprintf(cmd, "ffmpeg -y -v quiet -i \"%s\" -fflags +bitexact %s", filename, AP_CONVERTED_FILE);
+    system(cmd);
 
-    ap->fp = fopen(ap->converted_filename, "rb");
-    if (!ap->fp) {
+    FILE* fp = fopen(AP_CONVERTED_FILE, "rb");
+    if (!fp) {
         return AP_ERROR_CANNOT_OPEN_FILE;
     }
 
-    size_t bytes_read = fread((void*)&ap->header, 1, sizeof(WaveHeader), ap->fp);
+    size_t bytes_read = fread((void*)&ap->header, 1, sizeof(WaveHeader), fp);
     if (bytes_read != sizeof(WaveHeader)) {
         // Not enough header
         return AP_ERROR_INVALID_WAVE;
     }
 
+
+
+    ap_print_header(ap);
+
     if (!(ap->data = malloc(ap->header.data_size))) {
         return AP_ERROR_MALLOC;
     }
 
-    bytes_read = fread((void*)ap->data, 1, ap->header.data_size, ap->fp);
+
+    bytes_read = fread((void*)ap->data, 1, ap->header.data_size, fp);
     if (bytes_read != ap->header.data_size) {
         // Not enough data
         return AP_ERROR_INVALID_WAVE;
@@ -188,35 +210,35 @@ int ap_open(AudioPlayer* ap, const char* filename) {
         return AP_ERROR_INVALID_WAVE;
     }
 
+
     ap->duration = 1.0 * ap->header.data_size / ap->header.byte_rate;
-
-
 
     int upper_frequency = 200, lower_frequency = 100;
     int min_period = ap->header.sample_rate / upper_frequency;
     int max_period = ap->header.sample_rate / lower_frequency;
+
+    int total_samples = ap->header.data_size / (ap->header.channels * ap->header.bit_depth / 8);
     StretchHandle stretcher = stretch_init(min_period, max_period, ap->header.channels, STRETCH_FAST_FLAG);
-    int max_expected_samples = stretch_output_capacity(stretcher, AP_FRAMES_PER_CHUNK, 2);
+    int max_expected_samples = stretch_output_capacity(stretcher, total_samples, 2);
 
     double speeds[] = {0.5, 1.5, 2.0};
 
     for (int i = 0; i < 3; i++) {
+        ap->speed_buffers[i] = malloc(max_expected_samples * ap->header.channels * ap->header.bit_depth / 8);
         stretch_samples(
             stretcher,
             (const int16_t*)ap->data,
-            ap->header.data_size / ap->header.channels / (ap->header.bit_depth / 8),
+            total_samples,
             ap->speed_buffers[i], 1 / speeds[i]
         );
     }
 
-
-
-
-
-
-
+    stretch_deinit(stretcher);
+    ap->is_open = true;
     return 0;
 }
+
+
 
 int ap_get_header_string(AudioPlayer* ap, char* str) {
     WaveHeader h = ap->header;
@@ -298,7 +320,7 @@ int ap_play_(AudioPlayer* ap) {
             SND_PCM_ACCESS_RW_INTERLEAVED,
             ap->header.channels,
             ap->header.sample_rate,
-            0, 1000000
+            0, 100000
         )
     )
 
@@ -312,16 +334,17 @@ int ap_play_(AudioPlayer* ap) {
             uint8_t* data;
             double speed = ap->speed;
             if (speed == 0.5) { 
-                data = ap->speed_buffers[0];
+                data = (uint8_t*)ap->speed_buffers[0];
             } else if (speed == 1.5) { 
-                data = ap->speed_buffers[1];
+                data = (uint8_t*)ap->speed_buffers[1];
             } else if (speed == 2.0) { 
-                data = ap->speed_buffers[2];
+                data = (uint8_t*)ap->speed_buffers[2];
             } else {
                 data = ap->data;
             }
 
-            ret = snd_pcm_writei(pcm, data + ap->at_byte, AP_FRAMES_PER_CHUNK);
+            //ret = snd_pcm_writei(pcm, data + ap->at_byte, AP_FRAMES_PER_CHUNK);
+            ret = snd_pcm_writei(pcm, data + to_even(ap->at_byte / speed), AP_FRAMES_PER_CHUNK / speed);
 
             if (ret < 0) {
                 printf("play_ ret: %s\n", snd_strerror(ret));
@@ -346,8 +369,6 @@ int ap_play_(AudioPlayer* ap) {
     error_ret(snd_pcm_close(pcm));
 
     ap->is_playing = false;
-
-    g_print("Finished playing\n");
 
     return 0;
 }
@@ -375,9 +396,6 @@ int ap_pause(AudioPlayer* ap) {
     if (!ap_is_open(ap)) {
         return AP_ERROR_FILE_NOT_OPEN;
     }
-    if (!ap->is_playing) {
-        return 0;
-    }
     ap->pause = true;
     if (ap->thread) {
         pthread_join(ap->thread, NULL);
@@ -398,7 +416,6 @@ double ap_get_speed(AudioPlayer* ap) {
     return ap->speed;
 }
 int ap_set_speed(AudioPlayer* ap, double speed) {
-    g_print("ap set speed\n");
     ap->speed = speed;
 }
 double ap_get_timestamp(AudioPlayer* ap) {
@@ -414,9 +431,7 @@ int ap_set_timestamp(AudioPlayer* ap, double timestamp) {
     }
     timestamp = clamp(timestamp, 0, ap->duration);
     pthread_mutex_lock(&ap->byte_lock);
-    ap->at_byte = timestamp * ap->header.byte_rate;
-    // byte must be even
-    ap->at_byte += ap->at_byte % 2;
+    ap->at_byte = to_even(timestamp * ap->header.byte_rate);
     ap->at_byte_changed = true;
     pthread_mutex_unlock(&ap->byte_lock);
     return 0;
