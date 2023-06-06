@@ -74,6 +74,7 @@ static void file_clicked(GtkWidget* widget, gpointer data) {
     if (open_file_status != 0) {
         return;
     }
+    ap_pause(ap);
     file_index = (int)data;
     if (file_index < 0 || file_index >= ap_audio_file_count(ap)) {
         set_info("Invalid audio file\n");

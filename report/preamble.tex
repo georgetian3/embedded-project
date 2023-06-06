@@ -1,5 +1,5 @@
 \usepackage[margin=1in]{geometry}
-\usepackage[colorlinks=true]{hyperref}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue]{hyperref}
 \usepackage{ctex}
 
 \usepackage{multicol}
@@ -9,8 +9,14 @@
 
 
 \usepackage{minted}
-\setminted{
-    baselinestretch=1
-}
 \newmintinline[code]{text}{}
 \newminted[codeblock]{text}{}
+
+\let\oldFootnote\footnote
+\newcommand\nextToken\relax
+
+\renewcommand\footnote[1]{%
+    \oldFootnote{#1}\futurelet\nextToken\isFootnote}
+
+\newcommand\isFootnote{%
+    \ifx\footnote\nextToken\textsuperscript{,}\fi}

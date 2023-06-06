@@ -99,7 +99,6 @@ int to_even(int n) {
     return n + (n % 2);
 }
 
-
 int ap_destroy(AudioPlayer* ap) {
     ap_close(ap);
     if (ap->audio_filenames) {
@@ -408,8 +407,6 @@ int ap_pause(AudioPlayer* ap) {
     ap->pause = false;
     ap->thread = 0;
 }
-
-
 
 double ap_duration(AudioPlayer* ap) {
     if (!ap_is_open(ap)) {
